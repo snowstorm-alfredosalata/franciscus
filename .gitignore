@@ -1,0 +1,12 @@
+# Rust
+server/target/
+
+# Node
+app/node_modules/
+app/.svelte-kit/
+app/.vscode/
+app/build/
+
+# Build artifacts
+*.db
+app/static/sql-wasm.wasm

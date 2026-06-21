@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* Biblical references in paragraph content */
+ref {
+	text-decoration: underline dotted;
+	text-decoration-color: theme(--color-stone-400);
+	text-underline-offset: 2px;
+	cursor: help;
+}
+ref:hover {
+	text-decoration-color: theme(--color-stone-600);
+}
+ref::after {
+	content: attr(to);
+	position: absolute;
+	background: theme(--color-stone-800);
+	color: white;
+	font-size: 0.75rem;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.15s;
+	transform: translateY(-100%);
+	margin-top: -0.25rem;
+}
+ref {
+	position: relative;
+}
+ref:hover::after {
+	opacity: 1;
+}
