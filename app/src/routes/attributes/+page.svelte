@@ -1,15 +1,8 @@
 <script lang="ts">
 	import { getDistinctAttributes, type AttributeSummary } from '$lib';
+	import { t } from '$lib/i18n';
 
 	const attributes = getDistinctAttributes();
-
-	const typeLabels: Record<string, string> = {
-		virtue: 'Virtues',
-		topic: 'Topics',
-		event: 'Events',
-		place: 'Places',
-		person: 'People'
-	};
 
 	const typeColors: Record<string, string> = {
 		virtue: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800',
@@ -34,14 +27,14 @@
 
 <main class="max-w-3xl mx-auto px-4 py-8">
 	<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-		<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">Sources</a>
+		<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</a>
 		<span> / </span>
-		<span class="text-stone-600 dark:text-stone-300">Attributes</span>
+		<span class="text-stone-600 dark:text-stone-300">{t('nav.attributes')}</span>
 	</nav>
 
-	<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">Attributes</h2>
+	<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{t('attributes.heading')}</h2>
 	<p class="text-stone-500 dark:text-stone-400 mb-8">
-		Index of all attributes annotated in the sources: virtues, topics, events, places, and people.
+		{t('attributes.description')}
 	</p>
 
 	{#each typeOrder as attrType}
@@ -49,7 +42,7 @@
 		{#if items && items.length > 0}
 			<section class="mb-8">
 				<h3 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-3">
-					{typeLabels[attrType] ?? attrType}
+					{t(`attributes.typePlurals.${attrType}`)}
 				</h3>
 				<div class="flex flex-wrap gap-2">
 					{#each items as attr}

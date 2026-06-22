@@ -1,5 +1,5 @@
 import initSqlJs, { type Database, type BindParams } from 'sql.js';
-import type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage } from './types';
+import type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage, ParagraphTranslation, AsideTranslation } from './types';
 
 let db: Database | null = null;
 
@@ -126,6 +126,50 @@ export function getDistinctAttributes(): AttributeSummary[] {
 		 GROUP BY a.attr_type, a.attr_value
 		 ORDER BY a.attr_type, a.attr_value`
 	);
+}
+
+export interface AvailableLanguage {
+	lang: string;
+}
+
+export function getAvailableCorpusLanguages(): string[] {
+	const rows = queryAll<AvailableLanguage>(
+		'SELECT DISTINCT lang FROM paragraph_translations ORDER BY lang'
+	);
+	return rows.map((r) => r.lang);
+}
+
+export function getParagraphTranslations(
+	bookId: string,
+	chapterId: string,
+	lang: string
+): Map<string, string> {
+	const rows = queryAll<ParagraphTranslation>(
+		`SELECT pt.book_id, pt.paragraph_id, pt.lang, pt.content
+		 FROM paragraph_translations pt
+		 JOIN paragraphs p ON pt.book_id = p.book_id AND pt.paragraph_id = p.id
+		 WHERE pt.book_id = $bookId AND p.chapter_id = $chapterId AND pt.lang = $lang`,
+		{ $bookId: bookId, $chapterId: chapterId, $lang: lang }
+	);
+	const map = new Map<string, string>();
+	for (const r of rows) map.set(r.paragraph_id, r.content);
+	return map;
+}
+
+export function getAsideTranslations(
+	bookId: string,
+	chapterId: string,
+	lang: string
+): Map<number, string> {
+	const rows = queryAll<AsideTranslation>(
+		`SELECT book_id, chapter_id, position, lang, content
+		 FROM aside_translations
+		 WHERE book_id = $bookId AND chapter_id = $chapterId AND lang = $lang`,
+		{ $bookId: bookId, $chapterId: chapterId, $lang: lang }
+	);
+	const map = new Map<number, string>();
+	for (const r of rows) map.set(r.position, r.content);
+	return map;
 }
 
 export function getChapterAnnotations(bookId: string, chapterId: string): Annotation[] {

@@ -54,26 +54,51 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     db::create_tables(&conn);
 
     let mut book_count = 0u32;
+    let mut translation_count = 0u32;
     let mut annotation_count = 0u32;
     let mut attr_page_count = 0u32;
 
     let books_dir = data_dir.join("books");
+    let mut translation_files: Vec<PathBuf> = Vec::new();
+
     if books_dir.is_dir() {
         for entry in std::fs::read_dir(&books_dir).expect("Cannot read books directory") {
             let entry = entry.expect("Cannot read entry");
             let path = entry.path();
             if path.extension().is_some_and(|e| e == "md") {
-                let text = std::fs::read_to_string(&path).expect("Cannot read file");
-                match parser::parse_book(&text) {
-                    Ok(book) => {
-                        println!("  book: {} ({})", book.meta.title, book.meta.id);
-                        db::insert_book(&conn, &book);
-                        book_count += 1;
-                    }
-                    Err(e) => {
-                        eprintln!("  error parsing {}: {e}", path.display());
+                let stem = path.file_stem().unwrap().to_string_lossy();
+                if stem.contains('.') {
+                    translation_files.push(path);
+                } else {
+                    let text = std::fs::read_to_string(&path).expect("Cannot read file");
+                    match parser::parse_book(&text) {
+                        Ok(book) => {
+                            println!("  book: {} ({})", book.meta.title, book.meta.id);
+                            db::insert_book(&conn, &book);
+                            book_count += 1;
+                        }
+                        Err(e) => {
+                            eprintln!("  error parsing {}: {e}", path.display());
+                        }
                     }
                 }
+            }
+        }
+    }
+
+    for path in &translation_files {
+        let stem = path.file_stem().unwrap().to_string_lossy();
+        let dot_pos = stem.find('.').unwrap();
+        let lang = &stem[dot_pos + 1..];
+        let text = std::fs::read_to_string(path).expect("Cannot read translation file");
+        match parser::parse_book(&text) {
+            Ok(book) => {
+                println!("  translation: {} [{}]", book.meta.id, lang);
+                db::insert_translations(&conn, &book, lang);
+                translation_count += 1;
+            }
+            Err(e) => {
+                eprintln!("  error parsing translation {}: {e}", path.display());
             }
         }
     }
@@ -122,8 +147,9 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     }
 
     println!(
-        "Build complete: {} book(s), {} annotation(s)/relation(s), {} attribute page(s) -> {}",
+        "Build complete: {} book(s), {} translation(s), {} annotation(s)/relation(s), {} attribute page(s) -> {}",
         book_count,
+        translation_count,
         annotation_count,
         attr_page_count,
         output.display()

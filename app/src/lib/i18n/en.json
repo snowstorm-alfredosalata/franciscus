@@ -1,0 +1,47 @@
+{
+	"app": {
+		"title": "Franciscus",
+		"subtitle": "Franciscan Sources",
+		"loading": "Loading...",
+		"dbError": "Error loading database:"
+	},
+	"nav": {
+		"sources": "Sources",
+		"attributes": "Attributes"
+	},
+	"home": {
+		"sourcesHeading": "Sources"
+	},
+	"book": {
+		"notFound": "Book not found.",
+		"chaptersHeading": "Chapters"
+	},
+	"chapter": {
+		"notFound": "Chapter not found."
+	},
+	"attributes": {
+		"heading": "Attributes",
+		"description": "Index of all attributes annotated in the sources: virtues, topics, events, places, and people.",
+		"noOccurrences": "No paragraphs annotated with this attribute.",
+		"passagesHeading": "Passages",
+		"types": {
+			"virtue": "Virtue",
+			"topic": "Topic",
+			"event": "Event",
+			"place": "Place",
+			"person": "Person"
+		},
+		"typePlurals": {
+			"virtue": "Virtues",
+			"topic": "Topics",
+			"event": "Events",
+			"place": "Places",
+			"person": "People"
+		}
+	},
+	"language": {
+		"corpus": "Source text",
+		"ui": "Interface",
+		"original": "Latin (original)"
+	}
+}

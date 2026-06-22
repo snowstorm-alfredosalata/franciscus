@@ -7,10 +7,13 @@
 		getParagraphs,
 		getAsides,
 		getChapterAnnotations,
+		getParagraphTranslations,
+		getAsideTranslations,
 		type Paragraph,
 		type Aside,
 		type Annotation
 	} from '$lib';
+	import { t, getCorpusLang } from '$lib/i18n';
 
 	const bookId = $derived($page.params.book_id ?? '');
 	const chapterId = $derived($page.params.chapter_id ?? '');
@@ -23,6 +26,18 @@
 	const asides = $derived(book && chapter ? getAsides(bookId, chapterId) : []);
 	const allAnnotations = $derived(
 		book && chapter ? getChapterAnnotations(bookId, chapterId) : []
+	);
+
+	const corpusLang = $derived(getCorpusLang());
+	const paraTranslations = $derived(
+		corpusLang !== 'la' && book && chapter
+			? getParagraphTranslations(bookId, chapterId, corpusLang)
+			: new Map<string, string>()
+	);
+	const asideTranslations = $derived(
+		corpusLang !== 'la' && book && chapter
+			? getAsideTranslations(bookId, chapterId, corpusLang)
+			: new Map<number, string>()
 	);
 
 	const annotationsByParagraph = $derived.by(() => {
@@ -77,12 +92,20 @@
 			document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 		});
 	});
+
+	function paragraphContent(p: Paragraph): string {
+		return paraTranslations.get(p.id) ?? p.content;
+	}
+
+	function asideContent(a: Aside): string {
+		return asideTranslations.get(a.position) ?? a.content;
+	}
 </script>
 
 {#if book && chapter}
 	<main class="max-w-3xl mx-auto px-4 py-8">
 		<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">Sources</a>
+			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</a>
 			<span> / </span>
 			<a href="/book/{bookId}" class="hover:text-stone-600 dark:hover:text-stone-300">{book.title}</a>
 			<span> / </span>
@@ -102,7 +125,7 @@
 							{p.label ?? p.id}
 						</span>
 						<span class="para-text font-serif text-stone-800 dark:text-stone-200 leading-relaxed">
-							{@html p.content}
+							{@html paragraphContent(p)}
 						</span>
 						{#if ann.length > 0}
 							<div class="mt-1 ml-10 flex flex-wrap gap-1">
@@ -125,7 +148,7 @@
 					</div>
 				{:else}
 					<aside class="text-sm italic text-stone-400 dark:text-stone-500 font-serif py-2">
-						{block.data.content}
+						{asideContent(block.data)}
 					</aside>
 				{/if}
 			{/each}
@@ -154,6 +177,6 @@
 	</main>
 {:else}
 	<main class="max-w-3xl mx-auto px-4 py-8">
-		<p class="text-stone-500 dark:text-stone-400">Chapter not found.</p>
+		<p class="text-stone-500 dark:text-stone-400">{t('chapter.notFound')}</p>
 	</main>
 {/if}

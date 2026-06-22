@@ -81,6 +81,25 @@ pub fn create_tables(conn: &Connection) {
             FOREIGN KEY (source_book_id, source_paragraph_id) REFERENCES paragraphs(book_id, id),
             FOREIGN KEY (target_book_id, target_paragraph_id) REFERENCES paragraphs(book_id, id)
         );
+
+        CREATE TABLE IF NOT EXISTS paragraph_translations (
+            book_id         TEXT NOT NULL,
+            paragraph_id    TEXT NOT NULL,
+            lang            TEXT NOT NULL,
+            content         TEXT NOT NULL,
+            PRIMARY KEY (book_id, paragraph_id, lang),
+            FOREIGN KEY (book_id, paragraph_id) REFERENCES paragraphs(book_id, id)
+        );
+
+        CREATE TABLE IF NOT EXISTS aside_translations (
+            book_id         TEXT NOT NULL,
+            chapter_id      TEXT NOT NULL,
+            position        INTEGER NOT NULL,
+            lang            TEXT NOT NULL,
+            content         TEXT NOT NULL,
+            PRIMARY KEY (book_id, chapter_id, position, lang),
+            FOREIGN KEY (book_id, chapter_id) REFERENCES chapters(book_id, id)
+        );
         ",
     )
     .expect("Failed to create tables");
@@ -133,6 +152,32 @@ pub fn insert_attribute_page(conn: &Connection, page: &crate::models::AttributeP
         params![page.meta.attr_type, page.meta.attr_value, page.meta.title, page.content],
     )
     .expect("Failed to insert attribute page");
+}
+
+pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
+    let book_id = &book.meta.id;
+    for ch in &book.chapters {
+        for block in &ch.blocks {
+            match block {
+                Block::Paragraph { id, content, .. } => {
+                    conn.execute(
+                        "INSERT OR REPLACE INTO paragraph_translations (book_id, paragraph_id, lang, content)
+                         VALUES (?1, ?2, ?3, ?4)",
+                        params![book_id, id, lang, content],
+                    )
+                    .expect("Failed to insert paragraph translation");
+                }
+                Block::Aside { content, position } => {
+                    conn.execute(
+                        "INSERT OR REPLACE INTO aside_translations (book_id, chapter_id, position, lang, content)
+                         VALUES (?1, ?2, ?3, ?4, ?5)",
+                        params![book_id, ch.id, position, lang, content],
+                    )
+                    .expect("Failed to insert aside translation");
+                }
+            }
+        }
+    }
 }
 
 pub fn insert_annotations(conn: &Connection, file: &AnnotationFile) {

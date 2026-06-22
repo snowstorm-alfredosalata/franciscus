@@ -60,3 +60,18 @@ export interface Relation {
 	verified: boolean;
 	evidence: string | null;
 }
+
+export interface ParagraphTranslation {
+	book_id: string;
+	paragraph_id: string;
+	lang: string;
+	content: string;
+}
+
+export interface AsideTranslation {
+	book_id: string;
+	chapter_id: string;
+	position: number;
+	lang: string;
+	content: string;
+}

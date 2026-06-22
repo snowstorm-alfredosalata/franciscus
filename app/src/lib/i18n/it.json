@@ -1,0 +1,47 @@
+{
+	"app": {
+		"title": "Franciscus",
+		"subtitle": "Fonti Francescane",
+		"loading": "Caricamento...",
+		"dbError": "Errore nel caricamento del database:"
+	},
+	"nav": {
+		"sources": "Fonti",
+		"attributes": "Attributi"
+	},
+	"home": {
+		"sourcesHeading": "Fonti"
+	},
+	"book": {
+		"notFound": "Libro non trovato.",
+		"chaptersHeading": "Capitoli"
+	},
+	"chapter": {
+		"notFound": "Capitolo non trovato."
+	},
+	"attributes": {
+		"heading": "Attributi",
+		"description": "Indice di tutti gli attributi annotati nelle fonti: virtù, temi, eventi, luoghi e persone.",
+		"noOccurrences": "Nessun paragrafo annotato con questo attributo.",
+		"passagesHeading": "Passi",
+		"types": {
+			"virtue": "Virtù",
+			"topic": "Tema",
+			"event": "Evento",
+			"place": "Luogo",
+			"person": "Persona"
+		},
+		"typePlurals": {
+			"virtue": "Virtù",
+			"topic": "Temi",
+			"event": "Eventi",
+			"place": "Luoghi",
+			"person": "Persone"
+		}
+	},
+	"language": {
+		"corpus": "Testo fonte",
+		"ui": "Interfaccia",
+		"original": "Latino (originale)"
+	}
+}

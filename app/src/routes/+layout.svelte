@@ -1,6 +1,8 @@
 <script lang="ts">
 	import '../app.css';
 	import { initDb } from '$lib';
+	import LanguagePicker from '$lib/LanguagePicker.svelte';
+	import { t } from '$lib/i18n';
 
 	let { children } = $props();
 
@@ -26,11 +28,14 @@
 </script>
 
 <svelte:head>
-	<title>Franciscus</title>
+	<title>{t('app.title')}</title>
 </svelte:head>
 
 <div class="min-h-screen bg-white dark:bg-stone-900 transition-colors">
-	<div class="fixed top-3 right-3 z-50">
+	<div class="fixed top-3 right-3 z-50 flex items-center gap-1">
+		{#if ready}
+			<LanguagePicker />
+		{/if}
 		<button
 			onclick={toggleTheme}
 			class="p-2 rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
@@ -50,11 +55,11 @@
 
 	{#if error}
 		<main class="min-h-screen flex items-center justify-center">
-			<p class="text-red-700 dark:text-red-400">Error loading database: {error}</p>
+			<p class="text-red-700 dark:text-red-400">{t('app.dbError')} {error}</p>
 		</main>
 	{:else if !ready}
 		<main class="min-h-screen flex items-center justify-center">
-			<p class="text-stone-500 dark:text-stone-400">Loading...</p>
+			<p class="text-stone-500 dark:text-stone-400">{t('app.loading')}</p>
 		</main>
 	{:else}
 		{@render children()}

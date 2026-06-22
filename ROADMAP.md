@@ -44,10 +44,10 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 ### Internationalization
 
-- [ ] Implement content translation ingestion in the Rust CLI (walk `books/<id>.<lang>.md`, parse, insert into translation tables)
-- [ ] Add `paragraph_translations` and `aside_translations` tables to the DB schema
-- [ ] App UI i18n setup (JSON key files, language switcher component)
-- [ ] UI for selecting corpus language and UI language independently (default: Latin corpus, English UI)
+- [x] Implement content translation ingestion in the Rust CLI (walk `books/<id>.<lang>.md`, parse, insert into translation tables)
+- [x] Add `paragraph_translations` and `aside_translations` tables to the DB schema
+- [x] App UI i18n setup (JSON key files, language switcher component)
+- [x] UI for selecting corpus language and UI language independently (default: Latin corpus, English UI)
 
 ### Infrastructure
 

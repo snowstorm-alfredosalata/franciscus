@@ -1,23 +1,24 @@
 <script lang="ts">
 	import { getBooks, type BookMeta } from '$lib';
+	import { t } from '$lib/i18n';
 
 	const books: BookMeta[] = getBooks();
 </script>
 
 <main class="max-w-3xl mx-auto px-4 py-8">
 	<header class="mb-8">
-		<h1 class="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">Franciscus</h1>
-		<p class="text-stone-500 dark:text-stone-400 mt-1">Franciscan Sources</p>
+		<h1 class="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('app.title')}</h1>
+		<p class="text-stone-500 dark:text-stone-400 mt-1">{t('app.subtitle')}</p>
 	</header>
 
 	<nav class="mb-8 flex gap-4">
 		<a href="/attributes" class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors font-serif">
-			Attributes &rarr;
+			{t('nav.attributes')} &rarr;
 		</a>
 	</nav>
 
 	<section>
-		<h2 class="text-xl font-serif text-stone-700 dark:text-stone-300 mb-4">Sources</h2>
+		<h2 class="text-xl font-serif text-stone-700 dark:text-stone-300 mb-4">{t('home.sourcesHeading')}</h2>
 		<ul class="space-y-3">
 			{#each books as book}
 				<li>

@@ -1,3 +1,3 @@
-export { initDb, getDb, getBooks, getBook, getChapters, getParagraphs, getAsides, getChapterAnnotations, getAttributePages, getAttributePage, getAttributeOccurrences, getDistinctAttributes } from './db';
+export { initDb, getDb, getBooks, getBook, getChapters, getParagraphs, getAsides, getChapterAnnotations, getAttributePages, getAttributePage, getAttributeOccurrences, getDistinctAttributes, getAvailableCorpusLanguages, getParagraphTranslations, getAsideTranslations } from './db';
 export type { AttributeOccurrence, AttributeSummary } from './db';
-export type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage, Relation } from './types';
+export type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage, Relation, ParagraphTranslation, AsideTranslation } from './types';
