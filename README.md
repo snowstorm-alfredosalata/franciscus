@@ -37,10 +37,16 @@ franciscus-data/          server/                  app/
 - **SQLite, not NoSQL.** The data is relational (books → chapters → paragraphs, annotations keyed to paragraphs, relations linking paragraph pairs across works). SQLite is the right fit and doubles as the client distribution format.
 - **No ORM.** Six tables, hand-written SQL on both sides. The Rust side only writes; the TypeScript side only reads.
 - **No shared type generation.** The type interfaces are simple enough (6 types) that manual synchronization is preferable to a codegen pipeline.
+- **FTS5 for full-text search.** The Rust CLI builds an FTS5 index alongside the main database. Search runs client-side like all other queries.
+- **Verse and aside IDs assigned during ingestion.** The CLI transforms `[N]` verse markers into `<v id="<paragraph-id>-N">` elements and assigns positional IDs to `<aside>` blocks (`<chapter_id>-aside-1`, `<chapter_id>-aside-2`, …). Source files stay clean; addressable elements are a build artifact.
+- **Scripture references link to Nova Vulgata.** `<ref>` tags are rendered as links to [bibbiaedu.it](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`). Post-v1: language-aware Bible edition selection.
+- **Deep linking to paragraph and verse.** Stable, shareable URLs: `/book/<book_id>/<chapter_id>#<paragraph_id>` (e.g. `/book/1Cel/c1#prolog-1`).
+- **Content translations in separate DB tables.** Latin stays in the main `paragraphs` and `asides` tables. Translations go to `paragraph_translations(paragraph_id, lang, content)` and `aside_translations(aside_id, lang, content)`.
+- **App UI i18n via JSON keys.** The UI string count is small; PO/gettext tooling would be overkill. JSON key files with a library like Paraglide or svelte-i18n.
+- **Offline-first via Service Worker.** The database is downloaded with a progress indicator after the app shell loads. Service Worker and/or IndexedDB caching ensures repeat visits skip the download. PWA manifest enables installable mobile support.
 
 ### Future plans
 
-- PWA support (service worker + manifest for offline/installable mobile)
 - Axum API in `server/` for authenticated user contributions
 - Vulgata edition for biblical reference lookup
 - Wiki-like entity pages (places, people, virtues)
