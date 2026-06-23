@@ -24,13 +24,25 @@ export function getDb(): Database {
 }
 
 function queryAll<T>(sql: string, params: BindParams = {}): T[] {
-	const stmt = getDb().prepare(sql);
-	stmt.bind(params);
-	const results: T[] = [];
-	while (stmt.step()) {
-		results.push(stmt.getAsObject() as T);
+	let stmt;
+	try {
+		stmt = getDb().prepare(sql);
+		stmt.bind(params);
+	} catch (e) {
+		console.error('[db] queryAll prepare/bind failed', { sql, params, error: e });
+		throw e;
 	}
-	stmt.free();
+	const results: T[] = [];
+	try {
+		while (stmt.step()) {
+			results.push(stmt.getAsObject() as T);
+		}
+	} catch (e) {
+		console.error('[db] queryAll step failed', { sql, params, error: e });
+		throw e;
+	} finally {
+		stmt.free();
+	}
 	return results;
 }
 
@@ -188,9 +200,12 @@ export function searchParagraphs(query: string, lang: string): SearchResult[] {
 	const sanitized = query
 		.split(/\s+/)
 		.filter(Boolean)
-		.map(term => `"${term.replace(/"/g, '""')}"*`)
+		.map(term => term.replace(/['"()*^{}[\]:+\-\\]/g, ''))
+		.filter(Boolean)
+		.map(term => term + '*')
 		.join(' ');
 	if (!sanitized) return [];
+	console.log('[db] FTS5 query', { raw: query, sanitized, lang });
 
 	return queryAll<SearchResult>(
 		`SELECT s.book_id, b.title AS book_title, s.chapter_id, c.title AS chapter_title,

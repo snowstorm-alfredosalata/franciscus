@@ -11,9 +11,9 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 ## v1.0.0
 
 ### Content
-
-- [ ] Complete **2Cel** (Vita Seconda) transcription
-- [ ] Complete **LMj** (Legenda Maior) transcription
+- [x] Complete **1Cel** (Vita Prima) machine transcription
+- [~] Complete **2Cel** (Vita Seconda) machine transcription
+- [X] Complete **LMj** (Legenda Maior) machine transcription
 - [x] Parse verse markers `[N]` during ingestion into `<v id="<paragraph-id>-N">N</v>` so verses are individually styleable and addressable client-side
 - [ ] Assign positional IDs to `<aside>` elements during ingestion (auto-incrementing per chapter: `<chapter_id>-aside-1`, `<chapter_id>-aside-2`, ...)
 
@@ -25,7 +25,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 ### Reader UI
 
-- [ ] Full, first-class breadcrumbs (Home > Book > Chapter)
+- [ ] Full, first-class breadcrumbs
 - [ ] Scripture references (`<ref>` tags) rendered as links to [bibbiaedu.it Nova Vulgata](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`)
 - [x] Verse-level styling and interaction via the generated `<v>` elements
 - [x] Navigable links from relation and annotation badges to their target passages
@@ -66,3 +66,5 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [ ] **Vulgata edition** added to the corpus
 - [ ] **Wiki-like entity pages** (persons, places, events) with cross-referenced passages
 - [ ] **Language-aware Bible links** (choose Bible edition based on the active corpus language; Nova Vulgata is hardcoded for v1)
+- [ ] **Full manual review of latin sources**
+- [ ] **Italian and English translation**
