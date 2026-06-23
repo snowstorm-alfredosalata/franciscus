@@ -75,3 +75,15 @@ export interface AsideTranslation {
 	lang: string;
 	content: string;
 }
+
+export interface SearchResult {
+	book_id: string;
+	book_title: string;
+	chapter_id: string;
+	chapter_title: string;
+	paragraph_id: string;
+	paragraph_label: string | null;
+	lang: string;
+	snippet: string;
+	rank: number;
+}

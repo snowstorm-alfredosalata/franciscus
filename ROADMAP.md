@@ -19,9 +19,9 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 
 ### Search & Discovery
 
-- [ ] Build FTS5 index in the Rust CLI alongside the main DB
-- [ ] Search page: query input, ranked results with context snippets, click-through to the matching passage
-- [ ] Highlight matched terms inside the reader when arriving from a search result
+- [x] Build FTS5 index in the Rust CLI alongside the main DB
+- [x] Search page: query input, ranked results with context snippets, click-through to the matching passage
+- [x] Highlight matched terms inside the reader when arriving from a search result
 
 ### Reader UI
 

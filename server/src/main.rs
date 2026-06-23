@@ -146,6 +146,9 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
         }
     }
 
+    db::create_fts_index(&conn);
+    println!("  fts5 search index built");
+
     println!(
         "Build complete: {} book(s), {} translation(s), {} annotation(s)/relation(s), {} attribute page(s) -> {}",
         book_count,

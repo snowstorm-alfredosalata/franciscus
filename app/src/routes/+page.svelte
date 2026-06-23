@@ -12,6 +12,9 @@
 	</header>
 
 	<nav class="mb-8 flex gap-4">
+		<a href="/search" class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors font-serif">
+			{t('nav.search')} &rarr;
+		</a>
 		<a href="/attributes" class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors font-serif">
 			{t('nav.attributes')} &rarr;
 		</a>

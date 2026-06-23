@@ -71,3 +71,14 @@ v:target {
 	background: theme(--color-stone-600);
 	color: theme(--color-stone-100);
 }
+
+/* Search highlight in reader */
+mark.search-highlight {
+	background: theme(--color-amber-200);
+	color: inherit;
+	border-radius: 2px;
+	padding: 0 1px;
+}
+.dark mark.search-highlight {
+	background: theme(--color-amber-800);
+}

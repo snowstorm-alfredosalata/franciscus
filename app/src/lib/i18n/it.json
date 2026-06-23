@@ -7,7 +7,8 @@
 	},
 	"nav": {
 		"sources": "Fonti",
-		"attributes": "Attributi"
+		"attributes": "Attributi",
+		"search": "Ricerca"
 	},
 	"home": {
 		"sourcesHeading": "Fonti"
@@ -38,6 +39,13 @@
 			"place": "Luoghi",
 			"person": "Persone"
 		}
+	},
+	"search": {
+		"heading": "Ricerca",
+		"placeholder": "Cerca nelle fonti…",
+		"noResults": "Nessun risultato trovato.",
+		"resultCount": "risultati",
+		"resultCountOne": "risultato"
 	},
 	"language": {
 		"corpus": "Testo fonte",

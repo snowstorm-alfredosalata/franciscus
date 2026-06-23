@@ -1,4 +1,5 @@
 use rusqlite::{Connection, params};
+use regex::Regex;
 use crate::models::*;
 
 pub fn open_or_create(path: &str) -> Connection {
@@ -178,6 +179,64 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
             }
         }
     }
+}
+
+pub fn create_fts_index(conn: &Connection) {
+    conn.execute_batch(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(
+            book_id UNINDEXED,
+            chapter_id UNINDEXED,
+            paragraph_id UNINDEXED,
+            lang UNINDEXED,
+            content,
+            tokenize='unicode61'
+        );"
+    ).expect("Failed to create FTS5 virtual table");
+
+    let re = Regex::new(r"<[^>]+>").unwrap();
+
+    {
+        let mut stmt = conn.prepare(
+            "SELECT book_id, chapter_id, id, content FROM paragraphs"
+        ).unwrap();
+        let rows: Vec<(String, String, String, String)> = stmt.query_map([], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+        }).unwrap().filter_map(|r| r.ok()).collect();
+        drop(stmt);
+
+        for (book_id, chapter_id, id, content) in &rows {
+            let clean = re.replace_all(content, "");
+            conn.execute(
+                "INSERT INTO search_index (book_id, chapter_id, paragraph_id, lang, content)
+                 VALUES (?1, ?2, ?3, 'la', ?4)",
+                params![book_id, chapter_id, id, clean.as_ref()],
+            ).expect("Failed to insert into FTS index");
+        }
+    }
+
+    {
+        let mut stmt = conn.prepare(
+            "SELECT pt.book_id, p.chapter_id, pt.paragraph_id, pt.lang, pt.content
+             FROM paragraph_translations pt
+             JOIN paragraphs p ON pt.book_id = p.book_id AND pt.paragraph_id = p.id"
+        ).unwrap();
+        let rows: Vec<(String, String, String, String, String)> = stmt.query_map([], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?))
+        }).unwrap().filter_map(|r| r.ok()).collect();
+        drop(stmt);
+
+        for (book_id, chapter_id, paragraph_id, lang, content) in &rows {
+            let clean = re.replace_all(content, "");
+            conn.execute(
+                "INSERT INTO search_index (book_id, chapter_id, paragraph_id, lang, content)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![book_id, chapter_id, paragraph_id, lang, clean.as_ref()],
+            ).expect("Failed to insert translation into FTS index");
+        }
+    }
+
+    conn.execute_batch("INSERT INTO search_index(search_index) VALUES('optimize');")
+        .expect("Failed to optimize FTS index");
 }
 
 pub fn insert_annotations(conn: &Connection, file: &AnnotationFile) {

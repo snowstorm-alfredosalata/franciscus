@@ -93,6 +93,47 @@
 		});
 	});
 
+	const searchTerms = $derived(
+		($page.url.searchParams.get('q') ?? '')
+			.split(/\s+/)
+			.filter(Boolean)
+	);
+
+	function highlightTerms(container: HTMLElement, terms: string[]) {
+		if (!terms.length) return;
+		const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+		const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+		const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+		const textNodes: Text[] = [];
+		while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+		for (const node of textNodes) {
+			const text = node.textContent ?? '';
+			if (!pattern.test(text)) continue;
+			pattern.lastIndex = 0;
+			const frag = document.createDocumentFragment();
+			let last = 0;
+			let m;
+			while ((m = pattern.exec(text)) !== null) {
+				if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+				const mark = document.createElement('mark');
+				mark.className = 'search-highlight';
+				mark.textContent = m[0];
+				frag.appendChild(mark);
+				last = pattern.lastIndex;
+			}
+			if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+			node.parentNode?.replaceChild(frag, node);
+		}
+	}
+
+	$effect(() => {
+		if (searchTerms.length === 0 || blocks.length === 0) return;
+		tick().then(() => {
+			const el = document.querySelector('.chapter-content');
+			if (el) highlightTerms(el as HTMLElement, searchTerms);
+		});
+	});
+
 	function paragraphContent(p: Paragraph): string {
 		return paraTranslations.get(p.id) ?? p.content;
 	}

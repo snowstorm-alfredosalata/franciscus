@@ -1,18 +1,20 @@
-import initSqlJs, { type Database, type BindParams } from 'sql.js';
-import type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage, ParagraphTranslation, AsideTranslation } from './types';
+// @ts-ignore — fts5-sql-bundle's sql-wasm.js has no type declarations
+import initSqlJs from 'fts5-sql-bundle/dist/sql-wasm.js';
+import type { Database, BindParams } from 'sql.js';
+import type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage, ParagraphTranslation, AsideTranslation, SearchResult } from './types';
 
 let db: Database | null = null;
 
 export async function initDb(): Promise<Database> {
 	if (db) return db;
 
-	const SQL = await initSqlJs({
+	const SQL = await (initSqlJs as any)({
 		locateFile: () => '/sql-wasm.wasm'
 	});
 
 	const response = await fetch('/franciscus.db');
 	const buffer = await response.arrayBuffer();
-	db = new SQL.Database(new Uint8Array(buffer));
+	db = new SQL.Database(new Uint8Array(buffer)) as Database;
 	return db;
 }
 
@@ -179,5 +181,29 @@ export function getChapterAnnotations(bookId: string, chapterId: string): Annota
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
 		 WHERE a.book_id = $bookId AND p.chapter_id = $chapterId`,
 		{ $bookId: bookId, $chapterId: chapterId }
+	);
+}
+
+export function searchParagraphs(query: string, lang: string): SearchResult[] {
+	const sanitized = query
+		.split(/\s+/)
+		.filter(Boolean)
+		.map(term => `"${term.replace(/"/g, '""')}"*`)
+		.join(' ');
+	if (!sanitized) return [];
+
+	return queryAll<SearchResult>(
+		`SELECT s.book_id, b.title AS book_title, s.chapter_id, c.title AS chapter_title,
+		        s.paragraph_id, p.label AS paragraph_label, s.lang,
+		        snippet(search_index, 4, '<mark>', '</mark>', '…', 40) AS snippet,
+		        rank
+		 FROM search_index s
+		 JOIN books b ON s.book_id = b.id
+		 JOIN chapters c ON s.book_id = c.book_id AND s.chapter_id = c.id
+		 JOIN paragraphs p ON s.book_id = p.book_id AND s.paragraph_id = p.id
+		 WHERE search_index MATCH $query AND s.lang = $lang
+		 ORDER BY rank
+		 LIMIT 50`,
+		{ $query: sanitized, $lang: lang }
 	);
 }
