@@ -23,7 +23,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] Highlight matched terms inside the reader when arriving from a search result
 
 ### General UI
-- [ ] Adopt an UI library to simplify pages (Shadcn seems to have a svelte integration)
+- [x] Adopt an UI library to simplify pages (Shadcn seems to have a svelte integration)
 - [ ] Mobile-responsive layout
 - [ ] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility.
 - [ ] Expressive style, golden-crimson-white (light mode) and golden-royal blue-dark night blue (dark mode) palette. Should be reminiscent of medieval manuscripts but with a modern, readable interpretation. 
@@ -58,7 +58,6 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] Client-side caching strategy (Service Worker and/or IndexedDB) so repeat visits skip the download
 - [x] PWA manifest + service worker for offline and installable mobile support
 - [ ] Deployment pipeline (hosting provider TBD; the site is fully static)
-- [ ] Abstract all SQL queries into a primarily-data Rust library (compilable to WASM), reusable by both Rust APIs and the client
 
 ---
 
@@ -72,3 +71,4 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [ ] **Language-aware Bible links** (choose Bible edition based on the active corpus language; Nova Vulgata is hardcoded for v1)
 - [ ] **Full manual review of latin sources**
 - [ ] **Italian and English translation**
+- [ ] Abstract all SQL queries into a primarily-data Rust library (compilable to WASM), reusable by both Rust APIs and the client

@@ -1,16 +1,10 @@
 <script lang="ts">
 	import { getDistinctAttributes, type AttributeSummary } from '$lib';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
+	import { attrColors } from '$lib/attrColors';
 	import { t } from '$lib/i18n';
 
 	const attributes = getDistinctAttributes();
-
-	const typeColors: Record<string, string> = {
-		virtue: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800',
-		topic: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800',
-		event: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800',
-		place: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800',
-		person: 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-800'
-	};
 
 	const grouped = $derived.by(() => {
 		const map = new Map<string, AttributeSummary[]>();
@@ -26,11 +20,17 @@
 </script>
 
 <main class="max-w-3xl mx-auto px-4 py-8">
-	<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-		<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</a>
-		<span> / </span>
-		<span class="text-stone-600 dark:text-stone-300">{t('nav.attributes')}</span>
-	</nav>
+	<Breadcrumb.Root class="mb-6">
+		<Breadcrumb.List class="text-sm text-stone-400 dark:text-stone-500">
+			<Breadcrumb.Item>
+				<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator>/</Breadcrumb.Separator>
+			<Breadcrumb.Item>
+				<Breadcrumb.Page class="text-stone-600 dark:text-stone-300">{t('nav.attributes')}</Breadcrumb.Page>
+			</Breadcrumb.Item>
+		</Breadcrumb.List>
+	</Breadcrumb.Root>
 
 	<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{t('attributes.heading')}</h2>
 	<p class="text-stone-500 dark:text-stone-400 mb-8">
@@ -48,7 +48,7 @@
 					{#each items as attr}
 						<a
 							href="/attributes/{attr.attr_type}/{attr.attr_value}"
-							class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full transition-colors {typeColors[attr.attr_type] ?? 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'}"
+							class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full transition-colors {attrColors(attr.attr_type, true)}"
 						>
 							{attr.attr_value.replaceAll('_', ' ')}
 							<span class="text-xs opacity-60">({attr.count})</span>

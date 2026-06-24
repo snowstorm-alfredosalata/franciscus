@@ -14,6 +14,8 @@
 		type Annotation
 	} from '$lib';
 	import { t, getCorpusLang } from '$lib/i18n';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
+	import { attrColors } from '$lib/attrColors';
 
 	const bookId = $derived($page.params.book_id ?? '');
 	const chapterId = $derived($page.params.chapter_id ?? '');
@@ -145,13 +147,21 @@
 
 {#if book && chapter}
 	<main class="max-w-3xl mx-auto px-4 py-8">
-		<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</a>
-			<span> / </span>
-			<a href="/book/{bookId}" class="hover:text-stone-600 dark:hover:text-stone-300">{book.title}</a>
-			<span> / </span>
-			<span class="text-stone-600 dark:text-stone-300">{chapter.title}</span>
-		</nav>
+		<Breadcrumb.Root class="mb-6">
+			<Breadcrumb.List class="text-sm text-stone-400 dark:text-stone-500">
+				<Breadcrumb.Item>
+					<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
+				</Breadcrumb.Item>
+				<Breadcrumb.Separator>/</Breadcrumb.Separator>
+				<Breadcrumb.Item>
+					<Breadcrumb.Link href="/book/{bookId}" class="hover:text-stone-600 dark:hover:text-stone-300">{book.title}</Breadcrumb.Link>
+				</Breadcrumb.Item>
+				<Breadcrumb.Separator>/</Breadcrumb.Separator>
+				<Breadcrumb.Item>
+					<Breadcrumb.Page class="text-stone-600 dark:text-stone-300">{chapter.title}</Breadcrumb.Page>
+				</Breadcrumb.Item>
+			</Breadcrumb.List>
+		</Breadcrumb.Root>
 
 		<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{chapter.title}</h2>
 
@@ -173,12 +183,7 @@
 								{#each ann as a}
 									<a
 										href="/attributes/{a.attr_type}/{a.attr_value}"
-										class="inline-block text-xs px-2 py-0.5 rounded-full no-underline transition-colors
-											{a.attr_type === 'virtue' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-800' : ''}
-											{a.attr_type === 'topic' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800' : ''}
-											{a.attr_type === 'event' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800' : ''}
-											{a.attr_type === 'place' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800' : ''}
-											{a.attr_type === 'person' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-800' : ''}"
+										class="inline-block text-xs px-2 py-0.5 rounded-full no-underline transition-colors {attrColors(a.attr_type, true)}"
 										title={a.evidence ?? ''}
 									>
 										{a.attr_value} ({a.attr_type}{a.verified ? ' ✓' : ''})

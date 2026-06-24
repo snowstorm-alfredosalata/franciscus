@@ -5,6 +5,7 @@
 	import DecorativeImage from '$lib/DecorativeImage.svelte';
 	import TopNav from '$lib/TopNav.svelte';
 	import Footer from '$lib/Footer.svelte';
+	import { Button } from '$lib/components/ui/button/index.js';
 	import { t } from '$lib/i18n';
 
 	let { children } = $props();
@@ -39,7 +40,7 @@
 	<title>{t('app.title')}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-white dark:bg-stone-900 transition-colors pt-20 md:pt-24 pb-16 md:pb-20">
+<div class="flex min-h-screen flex-col bg-white dark:bg-stone-900 transition-colors pt-20 md:pt-24 md:pb-20">
 	<div class="fixed top-4 left-4 z-50 flex items-center gap-1">
 		<TopNav />
 	</div>
@@ -47,9 +48,11 @@
 		{#if ready}
 			<LanguagePicker />
 		{/if}
-		<button
+		<Button
+			variant="ghost"
+			size="icon"
 			onclick={toggleTheme}
-			class="p-2 rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+			class="rounded-full text-stone-500 dark:text-stone-400 hover:text-stone-500 dark:hover:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
 			aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
 		>
 			{#if dark}
@@ -61,7 +64,7 @@
 					<path fill-rule="evenodd" d="M7.455 2.004a.75.75 0 01.26.77 7 7 0 009.958 7.967.75.75 0 011.067.853A8.5 8.5 0 116.647 1.921a.75.75 0 01.808.083z" clip-rule="evenodd" />
 				</svg>
 			{/if}
-		</button>
+		</Button>
 	</div>
 
 	{#if error}

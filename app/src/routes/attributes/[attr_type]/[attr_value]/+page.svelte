@@ -6,6 +6,9 @@
 		type AttributePage,
 		type AttributeOccurrence
 	} from '$lib';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { attrColors } from '$lib/attrColors';
 	import { t } from '$lib/i18n';
 
 	const attrType = $derived($page.params.attr_type ?? '');
@@ -14,30 +17,30 @@
 	const attrPage = $derived(getAttributePage(attrType, attrValue));
 	const occurrences = $derived(getAttributeOccurrences(attrType, attrValue));
 
-	const typeColors: Record<string, string> = {
-		virtue: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
-		topic: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-		event: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-		place: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-		person: 'bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300'
-	};
-
 	const displayTitle = $derived(attrPage?.title ?? attrValue.replaceAll('_', ' '));
 </script>
 
 <main class="max-w-3xl mx-auto px-4 py-8">
-	<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-		<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</a>
-		<span> / </span>
-		<a href="/attributes" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.attributes')}</a>
-		<span> / </span>
-		<span class="text-stone-600 dark:text-stone-300">{displayTitle}</span>
-	</nav>
+	<Breadcrumb.Root class="mb-6">
+		<Breadcrumb.List class="text-sm text-stone-400 dark:text-stone-500">
+			<Breadcrumb.Item>
+				<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator>/</Breadcrumb.Separator>
+			<Breadcrumb.Item>
+				<Breadcrumb.Link href="/attributes" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.attributes')}</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator>/</Breadcrumb.Separator>
+			<Breadcrumb.Item>
+				<Breadcrumb.Page class="text-stone-600 dark:text-stone-300">{displayTitle}</Breadcrumb.Page>
+			</Breadcrumb.Item>
+		</Breadcrumb.List>
+	</Breadcrumb.Root>
 
 	<div class="mb-6">
-		<span class="inline-block text-xs px-2 py-0.5 rounded-full mb-2 {typeColors[attrType] ?? 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300'}">
+		<Badge class="mb-2 rounded-full font-normal {attrColors(attrType)}">
 			{t(`attributes.types.${attrType}`)}
-		</span>
+		</Badge>
 		<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{displayTitle}</h2>
 	</div>
 

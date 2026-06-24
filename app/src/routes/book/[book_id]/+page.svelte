@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { getBook, getChapters, type BookMeta, type Chapter } from '$lib';
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { t } from '$lib/i18n';
 
 	const bookId = $derived($page.params.book_id ?? '');
@@ -22,11 +23,17 @@
 
 {#if book}
 	<main class="max-w-3xl mx-auto px-4 py-8">
-		<nav class="text-sm text-stone-400 dark:text-stone-500 mb-6">
-			<a href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</a>
-			<span> / </span>
-			<span class="text-stone-600 dark:text-stone-300">{book.title}</span>
-		</nav>
+		<Breadcrumb.Root class="mb-6">
+			<Breadcrumb.List class="text-sm text-stone-400 dark:text-stone-500">
+				<Breadcrumb.Item>
+					<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
+				</Breadcrumb.Item>
+				<Breadcrumb.Separator>/</Breadcrumb.Separator>
+				<Breadcrumb.Item>
+					<Breadcrumb.Page class="text-stone-600 dark:text-stone-300">{book.title}</Breadcrumb.Page>
+				</Breadcrumb.Item>
+			</Breadcrumb.List>
+		</Breadcrumb.Root>
 
 		<header class="mb-8">
 			<h2 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{book.title}</h2>
