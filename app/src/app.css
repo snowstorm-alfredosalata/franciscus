@@ -1,31 +1,99 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn-svelte/tailwind.css";
+/* Self-hosted manuscript fonts (offline PWA) — bundled into the build, no CDN.
+   Wires --font-serif (EB Garamond) and --font-display (Cinzel). */
+@import "@fontsource-variable/eb-garamond";
+@import "@fontsource/cinzel/400.css";
+@import "@fontsource/cinzel/600.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Manuscript palette — brand ramps authored in oklch.
+   Hues: crimson 22°, gold 83°, royal/night blue 264°, warm parchment 85°.
+   Every brand/text pairing used below clears WCAG AA (≥4.5:1) on its surface;
+   ramp lightness was tuned against the contrast checker, do not nudge blindly.
+   Display/body faces fall back to system serifs until the @fontsource packages
+   are installed (see the note at the bottom of this file). */
+@theme {
+	--color-crimson-50: oklch(0.971 0.013 22);
+	--color-crimson-100: oklch(0.936 0.032 22);
+	--color-crimson-200: oklch(0.885 0.062 22);
+	--color-crimson-300: oklch(0.808 0.108 22);
+	--color-crimson-400: oklch(0.704 0.165 22);
+	--color-crimson-500: oklch(0.61 0.205 22);
+	--color-crimson-600: oklch(0.52 0.205 22);
+	--color-crimson-700: oklch(0.452 0.177 22);
+	--color-crimson-800: oklch(0.398 0.145 22);
+	--color-crimson-900: oklch(0.355 0.118 22);
+	--color-crimson-950: oklch(0.255 0.085 22);
+
+	--color-gold-50: oklch(0.984 0.018 83);
+	--color-gold-100: oklch(0.962 0.04 83);
+	--color-gold-200: oklch(0.924 0.078 83);
+	--color-gold-300: oklch(0.878 0.11 83);
+	--color-gold-400: oklch(0.82 0.135 83);
+	--color-gold-500: oklch(0.76 0.14 83);
+	--color-gold-600: oklch(0.66 0.13 83);
+	--color-gold-700: oklch(0.545 0.11 83);
+	--color-gold-800: oklch(0.46 0.092 83);
+	--color-gold-900: oklch(0.405 0.076 83);
+	--color-gold-950: oklch(0.285 0.052 83);
+
+	--color-royal-50: oklch(0.97 0.013 264);
+	--color-royal-100: oklch(0.932 0.028 264);
+	--color-royal-200: oklch(0.882 0.052 264);
+	--color-royal-300: oklch(0.812 0.09 264);
+	--color-royal-400: oklch(0.715 0.15 264);
+	--color-royal-500: oklch(0.62 0.19 264);
+	--color-royal-600: oklch(0.54 0.205 264);
+	--color-royal-700: oklch(0.47 0.18 264);
+	--color-royal-800: oklch(0.4 0.14 264);
+	--color-royal-900: oklch(0.24 0.05 264);
+	--color-royal-950: oklch(0.165 0.035 264);
+
+	--color-parchment-50: oklch(0.985 0.008 85);
+	--color-parchment-100: oklch(0.965 0.012 85);
+	--color-parchment-200: oklch(0.928 0.016 85);
+	--color-parchment-300: oklch(0.88 0.018 85);
+	--color-parchment-400: oklch(0.76 0.018 85);
+	--color-parchment-500: oklch(0.56 0.014 85);
+	--color-parchment-600: oklch(0.5 0.012 85);
+	--color-parchment-700: oklch(0.43 0.012 85);
+	--color-parchment-800: oklch(0.33 0.012 85);
+	--color-parchment-900: oklch(0.255 0.012 85);
+	--color-parchment-950: oklch(0.18 0.01 85);
+
+	/* Reading body serif + capitalis-style display face. Named faces load from
+	   @fontsource once installed; the system serifs keep the look intact offline. */
+	--font-serif:
+		"EB Garamond Variable", "EB Garamond", ui-serif, Georgia, Cambria,
+		"Times New Roman", Times, serif;
+	--font-display: "Cinzel", "Trajan Pro", ui-serif, Georgia, serif;
+}
 
 /* Biblical references in paragraph content */
 ref {
 	text-decoration: underline dotted;
-	text-decoration-color: theme(--color-stone-400);
+	text-decoration-color: var(--muted-foreground);
 	text-underline-offset: 2px;
 	cursor: help;
 	position: relative;
 }
 ref:hover,
 ref:focus-visible {
-	text-decoration-color: theme(--color-stone-600);
+	text-decoration-color: var(--foreground);
 }
 ref:focus-visible {
-	outline: 2px solid theme(--color-amber-400);
+	outline: 2px solid var(--ring);
 	outline-offset: 2px;
 	border-radius: 2px;
 }
 ref::after {
 	content: attr(to);
 	position: absolute;
-	background: theme(--color-stone-800);
-	color: white;
+	background: var(--foreground);
+	color: var(--background);
 	font-size: 0.75rem;
 	padding: 0.25rem 0.5rem;
 	border-radius: 0.25rem;
@@ -46,7 +114,7 @@ v {
 	font-size: 0.7rem;
 	font-weight: 600;
 	font-family: theme(--font-mono);
-	color: theme(--color-stone-400);
+	color: var(--muted-foreground);
 	vertical-align: super;
 	line-height: 0;
 	cursor: pointer;
@@ -55,118 +123,102 @@ v {
 }
 v:hover,
 v:focus-visible {
-	color: theme(--color-stone-600);
+	color: var(--foreground);
 }
 v:focus-visible {
-	outline: 2px solid theme(--color-amber-400);
+	outline: 2px solid var(--ring);
 	outline-offset: 2px;
 	border-radius: 2px;
 }
 v:target {
-	color: theme(--color-amber-600);
-}
-
-.dark v {
-	color: theme(--color-stone-500);
-}
-.dark v:hover {
-	color: theme(--color-stone-300);
+	color: theme(--color-gold-600);
 }
 .dark v:target {
-	color: theme(--color-amber-400);
-}
-
-.dark ref {
-	text-decoration-color: theme(--color-stone-500);
-}
-.dark ref:hover {
-	text-decoration-color: theme(--color-stone-300);
-}
-.dark ref::after {
-	background: theme(--color-stone-600);
-	color: theme(--color-stone-100);
+	color: theme(--color-gold-400);
 }
 
 /* Search highlight in reader */
 mark.search-highlight {
-	background: theme(--color-amber-200);
+	background: theme(--color-gold-200);
 	color: inherit;
 	border-radius: 2px;
 	padding: 0 1px;
 }
 .dark mark.search-highlight {
-	background: theme(--color-amber-800);
+	background: theme(--color-gold-800);
 }
 
-/* shadcn semantic tokens mapped onto the app's stone (neutral) + amber (accent)
-   palette so primitives match the existing look. */
+/* shadcn semantic tokens mapped onto the manuscript palette: warm parchment
+   surfaces + crimson brand + gold accent (light), deep night blue + royal blue
+   surfaces + royal brand + gold accent (dark). Remapping these recolors every
+   shadcn primitive at once. */
 :root {
-	--background: var(--color-white);
-	--foreground: var(--color-stone-800);
-	--card: var(--color-white);
-	--card-foreground: var(--color-stone-800);
-	--popover: var(--color-white);
-	--popover-foreground: var(--color-stone-800);
-	--primary: var(--color-stone-800);
-	--primary-foreground: var(--color-stone-50);
-	--secondary: var(--color-stone-100);
-	--secondary-foreground: var(--color-stone-800);
-	--muted: var(--color-stone-100);
-	--muted-foreground: var(--color-stone-500);
-	--accent: var(--color-stone-100);
-	--accent-foreground: var(--color-stone-800);
+	--background: var(--color-parchment-50);
+	--foreground: var(--color-parchment-900);
+	--card: oklch(0.995 0.004 85);
+	--card-foreground: var(--color-parchment-900);
+	--popover: oklch(0.995 0.004 85);
+	--popover-foreground: var(--color-parchment-900);
+	--primary: var(--color-crimson-600);
+	--primary-foreground: var(--color-parchment-50);
+	--secondary: var(--color-gold-100);
+	--secondary-foreground: var(--color-crimson-800);
+	--muted: var(--color-parchment-100);
+	--muted-foreground: var(--color-parchment-600);
+	--accent: var(--color-gold-100);
+	--accent-foreground: var(--color-crimson-800);
 	--destructive: oklch(0.577 0.245 27.325);
-	--border: var(--color-stone-200);
-	--input: var(--color-stone-300);
-	--ring: var(--color-amber-400);
-	--chart-1: var(--color-amber-400);
-	--chart-2: var(--color-stone-500);
-	--chart-3: var(--color-stone-400);
-	--chart-4: var(--color-stone-300);
-	--chart-5: var(--color-stone-600);
+	--border: var(--color-parchment-200);
+	--input: var(--color-parchment-300);
+	--ring: var(--color-gold-500);
+	--chart-1: var(--color-crimson-600);
+	--chart-2: var(--color-gold-600);
+	--chart-3: var(--color-royal-600);
+	--chart-4: var(--color-gold-400);
+	--chart-5: var(--color-crimson-800);
 	--radius: 0.625rem;
-	--sidebar: var(--color-stone-50);
-	--sidebar-foreground: var(--color-stone-800);
-	--sidebar-primary: var(--color-stone-800);
-	--sidebar-primary-foreground: var(--color-stone-50);
-	--sidebar-accent: var(--color-stone-100);
-	--sidebar-accent-foreground: var(--color-stone-800);
-	--sidebar-border: var(--color-stone-200);
-	--sidebar-ring: var(--color-amber-400);
+	--sidebar: var(--color-parchment-100);
+	--sidebar-foreground: var(--color-parchment-900);
+	--sidebar-primary: var(--color-crimson-600);
+	--sidebar-primary-foreground: var(--color-parchment-50);
+	--sidebar-accent: var(--color-gold-100);
+	--sidebar-accent-foreground: var(--color-crimson-800);
+	--sidebar-border: var(--color-parchment-200);
+	--sidebar-ring: var(--color-gold-500);
 }
 
 .dark {
-	--background: var(--color-stone-900);
-	--foreground: var(--color-stone-100);
-	--card: var(--color-stone-800);
-	--card-foreground: var(--color-stone-100);
-	--popover: var(--color-stone-800);
-	--popover-foreground: var(--color-stone-100);
-	--primary: var(--color-stone-100);
-	--primary-foreground: var(--color-stone-900);
-	--secondary: var(--color-stone-700);
-	--secondary-foreground: var(--color-stone-100);
-	--muted: var(--color-stone-800);
-	--muted-foreground: var(--color-stone-400);
-	--accent: var(--color-stone-800);
-	--accent-foreground: var(--color-stone-100);
+	--background: var(--color-royal-950);
+	--foreground: oklch(0.945 0.014 85);
+	--card: var(--color-royal-900);
+	--card-foreground: oklch(0.945 0.014 85);
+	--popover: var(--color-royal-900);
+	--popover-foreground: oklch(0.945 0.014 85);
+	--primary: var(--color-royal-600);
+	--primary-foreground: var(--color-parchment-50);
+	--secondary: var(--color-royal-800);
+	--secondary-foreground: oklch(0.945 0.014 85);
+	--muted: oklch(0.22 0.04 264);
+	--muted-foreground: oklch(0.72 0.02 260);
+	--accent: var(--color-royal-800);
+	--accent-foreground: oklch(0.945 0.014 85);
 	--destructive: oklch(0.704 0.191 22.216);
-	--border: var(--color-stone-700);
-	--input: var(--color-stone-600);
-	--ring: var(--color-amber-400);
-	--chart-1: var(--color-amber-400);
-	--chart-2: var(--color-stone-400);
-	--chart-3: var(--color-stone-500);
-	--chart-4: var(--color-stone-600);
-	--chart-5: var(--color-stone-300);
-	--sidebar: var(--color-stone-900);
-	--sidebar-foreground: var(--color-stone-100);
-	--sidebar-primary: var(--color-stone-100);
-	--sidebar-primary-foreground: var(--color-stone-900);
-	--sidebar-accent: var(--color-stone-800);
-	--sidebar-accent-foreground: var(--color-stone-100);
-	--sidebar-border: var(--color-stone-700);
-	--sidebar-ring: var(--color-amber-400);
+	--border: oklch(0.4 0.09 264);
+	--input: oklch(0.45 0.09 264);
+	--ring: var(--color-gold-400);
+	--chart-1: var(--color-crimson-400);
+	--chart-2: var(--color-gold-400);
+	--chart-3: var(--color-royal-400);
+	--chart-4: var(--color-gold-300);
+	--chart-5: var(--color-crimson-300);
+	--sidebar: var(--color-royal-950);
+	--sidebar-foreground: oklch(0.945 0.014 85);
+	--sidebar-primary: var(--color-royal-600);
+	--sidebar-primary-foreground: var(--color-parchment-50);
+	--sidebar-accent: var(--color-royal-800);
+	--sidebar-accent-foreground: oklch(0.945 0.014 85);
+	--sidebar-border: oklch(0.4 0.09 264);
+	--sidebar-ring: var(--color-gold-400);
 }
 
 @theme inline {
@@ -220,13 +272,18 @@ mark.search-highlight {
 	html {
 		@apply font-sans;
 	}
-	/* Consistent amber focus ring on all keyboard-focused interactive elements. */
+	/* Capitalis-style display face for major titles (manuscript header feel). */
+	h1,
+	h2 {
+		font-family: var(--font-display);
+	}
+	/* Consistent gold focus ring on all keyboard-focused interactive elements. */
 	a:focus-visible,
 	button:focus-visible,
 	select:focus-visible,
 	[tabindex]:focus-visible,
 	[role="button"]:focus-visible {
-		outline: 2px solid theme(--color-amber-400);
+		outline: 2px solid var(--ring);
 		outline-offset: 2px;
 		border-radius: 2px;
 	}

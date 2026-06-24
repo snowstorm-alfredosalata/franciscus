@@ -36,8 +36,8 @@
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 	<header class="mb-6">
-		<h1 class="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100">{t('app.title')}</h1>
-		<p class="text-stone-500 dark:text-stone-400 mt-1">{t('app.subtitle')}</p>
+		<h1 class="text-3xl font-display font-bold text-foreground">{t('app.title')}</h1>
+		<p class="text-muted-foreground mt-1">{t('app.subtitle')}</p>
 	</header>
 
 	<input
@@ -45,15 +45,15 @@
 		bind:value={inputValue}
 		placeholder={t('search.placeholder')}
 		aria-label={t('search.placeholder')}
-		class="w-full px-4 py-3 rounded-lg border border-stone-300 dark:border-stone-600
-		       bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100
-		       placeholder:text-stone-400 dark:placeholder:text-stone-500
-		       focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-600
+		class="w-full px-4 py-3 rounded-lg border border-input
+		       bg-background text-foreground
+		       placeholder:text-muted-foreground
+		       focus:outline-none focus:ring-2 focus:ring-ring
 		       font-serif text-lg mb-6"
 	/>
 
 	{#if searching}
-		<p class="text-sm text-stone-500 dark:text-stone-400 mb-2">
+		<p class="text-sm text-muted-foreground mb-2">
 			{results.length} {results.length === 1 ? t('search.resultCountOne') : t('search.resultCount')}
 		</p>
 
@@ -63,18 +63,18 @@
 					<li>
 						<a
 							href={resultUrl(r)}
-							class="block p-4 rounded-lg border border-stone-200 dark:border-stone-700
-							       hover:border-stone-400 dark:hover:border-stone-500 transition-colors group"
+							class="block p-4 rounded-lg border border-border
+							       hover:border-ring transition-colors group"
 						>
-							<div class="text-sm text-stone-500 dark:text-stone-400 mb-1">
-								<span class="font-medium text-stone-700 dark:text-stone-300">{r.book_title}</span>
+							<div class="text-sm text-muted-foreground mb-1">
+								<span class="font-medium text-foreground">{r.book_title}</span>
 								<span> &mdash; </span>
 								<span>{r.chapter_title}</span>
 								{#if r.paragraph_label}
-									<span class="text-stone-500 dark:text-stone-400"> &sect;{r.paragraph_label}</span>
+									<span class="text-muted-foreground"> &sect;{r.paragraph_label}</span>
 								{/if}
 							</div>
-							<p class="font-serif text-stone-700 dark:text-stone-300 leading-relaxed">
+							<p class="font-serif text-foreground leading-relaxed">
 								{@html r.snippet}
 							</p>
 						</a>
@@ -82,25 +82,25 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="text-stone-500 dark:text-stone-400 mt-6 font-serif">{t('search.noResults')}</p>
+			<p class="text-muted-foreground mt-6 font-serif">{t('search.noResults')}</p>
 		{/if}
 	{:else}
 		<nav aria-label={t('nav.attributes')} class="mb-6 flex gap-4">
-			<a href="/attributes" class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors font-serif">
+			<a href="/attributes" class="text-muted-foreground hover:text-primary transition-colors font-serif">
 				{t('nav.attributes')} &rarr;
 			</a>
 		</nav>
 
 		<section>
-			<h2 class="text-xl font-serif text-stone-700 dark:text-stone-300 mb-4">{t('home.sourcesHeading')}</h2>
+			<h2 class="text-xl font-display text-foreground mb-4">{t('home.sourcesHeading')}</h2>
 			<ul class="space-y-3">
 				{#each books as book}
 					<li>
-						<a href="/book/{book.id}" class="group block p-4 rounded-lg border border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 transition-colors">
-							<strong class="font-serif text-lg text-stone-800 dark:text-stone-100 group-hover:text-stone-950 dark:group-hover:text-white">{book.title}</strong>
-							<span class="text-stone-500 dark:text-stone-400"> — {book.author}</span>
+						<a href="/book/{book.id}" class="group block p-4 rounded-lg border border-border hover:border-ring transition-colors">
+							<strong class="font-serif text-lg text-foreground group-hover:text-primary">{book.title}</strong>
+							<span class="text-muted-foreground"> — {book.author}</span>
 							{#if book.date}
-								<span class="text-stone-500 dark:text-stone-400"> ({book.date})</span>
+								<span class="text-muted-foreground"> ({book.date})</span>
 							{/if}
 						</a>
 					</li>

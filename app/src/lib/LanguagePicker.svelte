@@ -24,7 +24,7 @@
 
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger
-		class="p-2 pointer-coarse:p-3 rounded-full text-stone-500 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+		class="p-2 pointer-coarse:p-3 rounded-full text-muted-foreground hover:bg-accent transition-colors"
 		aria-label="Language settings"
 	>
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
@@ -35,17 +35,17 @@
 
 	<DropdownMenu.Content
 		align="end"
-		class="w-56 p-3 space-y-3 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-lg ring-0"
+		class="w-56 p-3 space-y-3 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg ring-0"
 	>
 		<div>
-			<label for="corpus-lang" class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
+			<label for="corpus-lang" class="block text-xs font-medium text-muted-foreground mb-1">
 				{t('language.corpus')}
 			</label>
 			<select
 				id="corpus-lang"
 				value={getCorpusLang()}
 				onchange={(e) => setCorpusLang((e.target as HTMLSelectElement).value)}
-				class="w-full text-sm rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 px-2 py-1"
+				class="w-full text-sm rounded border border-input bg-background text-foreground px-2 py-1"
 			>
 				<option value="la">{t('language.original')}</option>
 				{#each corpusLanguages as lang}
@@ -54,14 +54,14 @@
 			</select>
 		</div>
 		<div>
-			<label for="ui-lang" class="block text-xs font-medium text-stone-500 dark:text-stone-400 mb-1">
+			<label for="ui-lang" class="block text-xs font-medium text-muted-foreground mb-1">
 				{t('language.ui')}
 			</label>
 			<select
 				id="ui-lang"
 				value={getUiLang()}
 				onchange={(e) => setUiLang((e.target as HTMLSelectElement).value)}
-				class="w-full text-sm rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 px-2 py-1"
+				class="w-full text-sm rounded border border-input bg-background text-foreground px-2 py-1"
 			>
 				{#each UI_LANGUAGES as lang}
 					<option value={lang.code}>{lang.label}</option>

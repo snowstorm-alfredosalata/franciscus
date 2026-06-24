@@ -204,22 +204,22 @@
 {#if book && chapter}
 	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 		<Breadcrumb.Root class="mb-6">
-			<Breadcrumb.List class="text-sm text-stone-500 dark:text-stone-400">
+			<Breadcrumb.List class="text-sm text-muted-foreground">
 				<Breadcrumb.Item>
-					<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
+					<Breadcrumb.Link href="/" class="hover:text-foreground">{t('nav.sources')}</Breadcrumb.Link>
 				</Breadcrumb.Item>
 				<Breadcrumb.Separator>/</Breadcrumb.Separator>
 				<Breadcrumb.Item>
-					<Breadcrumb.Link href="/book/{bookId}" class="hover:text-stone-600 dark:hover:text-stone-300">{book.title}</Breadcrumb.Link>
+					<Breadcrumb.Link href="/book/{bookId}" class="hover:text-foreground">{book.title}</Breadcrumb.Link>
 				</Breadcrumb.Item>
 				<Breadcrumb.Separator>/</Breadcrumb.Separator>
 				<Breadcrumb.Item>
-					<Breadcrumb.Page class="text-stone-600 dark:text-stone-300">{chapter.title}</Breadcrumb.Page>
+					<Breadcrumb.Page class="text-foreground">{chapter.title}</Breadcrumb.Page>
 				</Breadcrumb.Item>
 			</Breadcrumb.List>
 		</Breadcrumb.Root>
 
-		<h1 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{chapter.title}</h1>
+		<h1 class="text-2xl font-display font-bold text-foreground mb-6">{chapter.title}</h1>
 
 		<div class="chapter-content space-y-4" lang={corpusLang}>
 			{#each blocks as block}
@@ -227,10 +227,10 @@
 					{@const p = block.data}
 					{@const ann = block.annotations}
 					<div class="paragraph group" id={p.id}>
-						<span class="inline-block min-w-8 text-xs text-stone-500 dark:text-stone-400 font-mono mr-2 align-top pt-1">
+						<span class="inline-block min-w-8 text-xs text-muted-foreground font-mono mr-2 align-top pt-1">
 							{p.label ?? p.id}
 						</span>
-						<span class="para-text font-serif text-stone-800 dark:text-stone-200 leading-relaxed">
+						<span class="para-text font-serif text-foreground leading-relaxed">
 							{@html paragraphContent(p)}
 						</span>
 						{#if ann.length > 0}
@@ -248,18 +248,18 @@
 						{/if}
 					</div>
 				{:else}
-					<aside class="text-sm italic text-stone-500 dark:text-stone-400 font-serif py-2">
+					<aside class="text-sm italic text-muted-foreground font-serif py-2">
 						{asideContent(block.data)}
 					</aside>
 				{/if}
 			{/each}
 		</div>
 
-		<nav aria-label={t('a11y.pagination')} class="flex justify-between gap-4 mt-12 pt-6 border-t border-stone-200 dark:border-stone-700">
+		<nav aria-label={t('a11y.pagination')} class="flex justify-between gap-4 mt-12 pt-6 border-t border-border">
 			{#if prevChapter}
 				<a
 					href="/book/{bookId}/{prevChapter.id}"
-					class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-1 min-w-0 text-left"
+					class="text-muted-foreground hover:text-primary transition-colors flex-1 min-w-0 text-left"
 				>
 					&larr; {prevChapter.title}
 				</a>
@@ -269,7 +269,7 @@
 			{#if nextChapter}
 				<a
 					href="/book/{bookId}/{nextChapter.id}"
-					class="text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors flex-1 min-w-0 text-right"
+					class="text-muted-foreground hover:text-primary transition-colors flex-1 min-w-0 text-right"
 				>
 					{nextChapter.title} &rarr;
 				</a>
@@ -278,6 +278,6 @@
 	</main>
 {:else}
 	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
-		<p class="text-stone-500 dark:text-stone-400">{t('chapter.notFound')}</p>
+		<p class="text-muted-foreground">{t('chapter.notFound')}</p>
 	</main>
 {/if}

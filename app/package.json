@@ -13,6 +13,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
 	},
 	"dependencies": {
+		"@fontsource-variable/eb-garamond": "^5.2.7",
+		"@fontsource/cinzel": "^5.2.8",
 		"fts5-sql-bundle": "^1.0.2",
 		"sql.js": "^1.14.1"
 	},

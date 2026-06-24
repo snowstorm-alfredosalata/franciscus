@@ -22,17 +22,17 @@
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 	<Breadcrumb.Root class="mb-6">
-		<Breadcrumb.List class="text-sm text-stone-500 dark:text-stone-400">
+		<Breadcrumb.List class="text-sm text-muted-foreground">
 			<Breadcrumb.Item>
-				<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
+				<Breadcrumb.Link href="/" class="hover:text-foreground">{t('nav.sources')}</Breadcrumb.Link>
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator>/</Breadcrumb.Separator>
 			<Breadcrumb.Item>
-				<Breadcrumb.Link href="/attributes" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.attributes')}</Breadcrumb.Link>
+				<Breadcrumb.Link href="/attributes" class="hover:text-foreground">{t('nav.attributes')}</Breadcrumb.Link>
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator>/</Breadcrumb.Separator>
 			<Breadcrumb.Item>
-				<Breadcrumb.Page class="text-stone-600 dark:text-stone-300">{displayTitle}</Breadcrumb.Page>
+				<Breadcrumb.Page class="text-foreground">{displayTitle}</Breadcrumb.Page>
 			</Breadcrumb.Item>
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
@@ -41,44 +41,44 @@
 		<Badge class="mb-2 rounded-full font-normal {attrColors(attrType)}">
 			{t(`attributes.types.${attrType}`)}
 		</Badge>
-		<h1 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100">{displayTitle}</h1>
+		<h1 class="text-2xl font-display font-bold text-foreground">{displayTitle}</h1>
 	</div>
 
 	{#if attrPage}
-		<div class="prose prose-stone dark:prose-invert max-w-none mb-10 font-serif leading-relaxed text-stone-700 dark:text-stone-300">
+		<div class="prose prose-stone dark:prose-invert max-w-none mb-10 font-serif leading-relaxed text-foreground">
 			{@html attrPage.content}
 		</div>
 	{/if}
 
 	{#if occurrences.length > 0}
 		<section>
-			<h2 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-4">
+			<h2 class="text-lg font-display text-foreground mb-4">
 				{t('attributes.passagesHeading')} ({occurrences.length})
 			</h2>
 			<div class="space-y-4">
 				{#each occurrences as occ}
-					<div class="border border-stone-200 dark:border-stone-700 rounded-lg p-4">
-						<div class="text-sm text-stone-500 dark:text-stone-400 mb-2">
+					<div class="border border-border rounded-lg p-4">
+						<div class="text-sm text-muted-foreground mb-2">
 							<a
 								href="/book/{occ.book_id}"
-								class="hover:text-stone-600 dark:hover:text-stone-300"
+								class="hover:text-primary"
 							>{occ.book_title}</a>
 							<span> / </span>
 							<a
 								href="/book/{occ.book_id}/{occ.chapter_id}"
-								class="hover:text-stone-600 dark:hover:text-stone-300"
+								class="hover:text-primary"
 							>{occ.chapter_title}</a>
 							<span> / </span>
 							<a
 								href="/book/{occ.book_id}/{occ.chapter_id}#{occ.paragraph_id}"
-								class="hover:text-stone-600 dark:hover:text-stone-300"
+								class="hover:text-primary"
 							>{occ.paragraph_label ?? occ.paragraph_id}</a>
 						</div>
-						<div lang="la" class="font-serif text-stone-800 dark:text-stone-200 leading-relaxed">
+						<div lang="la" class="font-serif text-foreground leading-relaxed">
 							{@html occ.content}
 						</div>
 						{#if occ.evidence}
-							<p class="mt-2 text-sm text-stone-500 dark:text-stone-400 italic">
+							<p class="mt-2 text-sm text-muted-foreground italic">
 								{occ.evidence}
 							</p>
 						{/if}
@@ -87,7 +87,7 @@
 			</div>
 		</section>
 	{:else}
-		<p class="text-stone-500 dark:text-stone-400 italic">
+		<p class="text-muted-foreground italic">
 			{t('attributes.noOccurrences')}
 		</p>
 	{/if}

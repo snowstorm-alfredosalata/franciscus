@@ -21,19 +21,19 @@
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
 	<Breadcrumb.Root class="mb-6">
-		<Breadcrumb.List class="text-sm text-stone-500 dark:text-stone-400">
+		<Breadcrumb.List class="text-sm text-muted-foreground">
 			<Breadcrumb.Item>
-				<Breadcrumb.Link href="/" class="hover:text-stone-600 dark:hover:text-stone-300">{t('nav.sources')}</Breadcrumb.Link>
+				<Breadcrumb.Link href="/" class="hover:text-foreground">{t('nav.sources')}</Breadcrumb.Link>
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator>/</Breadcrumb.Separator>
 			<Breadcrumb.Item>
-				<Breadcrumb.Page class="text-stone-600 dark:text-stone-300">{t('nav.attributes')}</Breadcrumb.Page>
+				<Breadcrumb.Page class="text-foreground">{t('nav.attributes')}</Breadcrumb.Page>
 			</Breadcrumb.Item>
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
 
-	<h1 class="text-2xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-6">{t('attributes.heading')}</h1>
-	<p class="text-stone-500 dark:text-stone-400 mb-8">
+	<h1 class="text-2xl font-display font-bold text-foreground mb-6">{t('attributes.heading')}</h1>
+	<p class="text-muted-foreground mb-8">
 		{t('attributes.description')}
 	</p>
 
@@ -41,7 +41,7 @@
 		{@const items = grouped.get(attrType)}
 		{#if items && items.length > 0}
 			<section class="mb-8">
-				<h2 class="text-lg font-serif text-stone-700 dark:text-stone-300 mb-3">
+				<h2 class="text-lg font-display text-foreground mb-3">
 					{t(`attributes.typePlurals.${attrType}`)}
 				</h2>
 				<div class="flex flex-wrap gap-2">
