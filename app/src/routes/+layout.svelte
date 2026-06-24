@@ -36,7 +36,7 @@
 	});
 
 	// Keep <html lang> in sync with the active UI language (the page chrome).
-	// Source text gets its own lang attribute on the reader region.
+	// Source text gets its own lang topic on the reader region.
 	$effect(() => {
 		document.documentElement.lang = getUiLang();
 	});

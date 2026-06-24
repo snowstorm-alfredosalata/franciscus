@@ -85,9 +85,9 @@
 			<p class="text-muted-foreground mt-6 font-serif">{t('search.noResults')}</p>
 		{/if}
 	{:else}
-		<nav aria-label={t('nav.attributes')} class="mb-6 flex gap-4">
-			<a href="/attributes" class="text-muted-foreground hover:text-primary transition-colors font-serif">
-				{t('nav.attributes')} &rarr;
+		<nav aria-label={t('nav.topics')} class="mb-6 flex gap-4">
+			<a href="/topics" class="text-muted-foreground hover:text-primary transition-colors font-serif">
+				{t('nav.topics')} &rarr;
 			</a>
 		</nav>
 

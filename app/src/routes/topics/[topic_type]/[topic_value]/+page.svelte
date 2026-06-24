@@ -1,23 +1,23 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import {
-		getAttributePage,
-		getAttributeOccurrences,
-		type AttributePage,
-		type AttributeOccurrence
+		getTopicPage,
+		getTopicOccurrences,
+		type TopicPage,
+		type TopicOccurrence
 	} from '$lib';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { attrColors } from '$lib/attrColors';
+	import { topicColors } from '$lib/topicColors';
 	import { t } from '$lib/i18n';
 
-	const attrType = $derived($page.params.attr_type ?? '');
-	const attrValue = $derived($page.params.attr_value ?? '');
+	const topicType = $derived($page.params.topic_type ?? '');
+	const topicValue = $derived($page.params.topic_value ?? '');
 
-	const attrPage = $derived(getAttributePage(attrType, attrValue));
-	const occurrences = $derived(getAttributeOccurrences(attrType, attrValue));
+	const topicPage = $derived(getTopicPage(topicType, topicValue));
+	const occurrences = $derived(getTopicOccurrences(topicType, topicValue));
 
-	const displayTitle = $derived(attrPage?.title ?? attrValue.replaceAll('_', ' '));
+	const displayTitle = $derived(topicPage?.title ?? topicValue.replaceAll('_', ' '));
 </script>
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
@@ -28,7 +28,7 @@
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator>/</Breadcrumb.Separator>
 			<Breadcrumb.Item>
-				<Breadcrumb.Link href="/attributes" class="hover:text-foreground">{t('nav.attributes')}</Breadcrumb.Link>
+				<Breadcrumb.Link href="/topics" class="hover:text-foreground">{t('nav.topics')}</Breadcrumb.Link>
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator>/</Breadcrumb.Separator>
 			<Breadcrumb.Item>
@@ -38,22 +38,22 @@
 	</Breadcrumb.Root>
 
 	<div class="mb-6">
-		<Badge class="mb-2 rounded-full font-normal {attrColors(attrType)}">
-			{t(`attributes.types.${attrType}`)}
+		<Badge class="mb-2 rounded-full font-normal {topicColors(topicType)}">
+			{t(`topics.types.${topicType}`)}
 		</Badge>
 		<h1 class="text-2xl font-display font-bold text-foreground">{displayTitle}</h1>
 	</div>
 
-	{#if attrPage}
+	{#if topicPage}
 		<div class="prose prose-stone dark:prose-invert max-w-none mb-10 font-serif leading-relaxed text-foreground">
-			{@html attrPage.content}
+			{@html topicPage.content}
 		</div>
 	{/if}
 
 	{#if occurrences.length > 0}
 		<section>
 			<h2 class="text-lg font-display text-foreground mb-4">
-				{t('attributes.passagesHeading')} ({occurrences.length})
+				{t('topics.passagesHeading')} ({occurrences.length})
 			</h2>
 			<div class="space-y-4">
 				{#each occurrences as occ}
@@ -88,7 +88,7 @@
 		</section>
 	{:else}
 		<p class="text-muted-foreground italic">
-			{t('attributes.noOccurrences')}
+			{t('topics.noOccurrences')}
 		</p>
 	{/if}
 </main>

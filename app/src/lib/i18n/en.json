@@ -8,7 +8,7 @@
 	},
 	"nav": {
 		"sources": "Sources",
-		"attributes": "Attributes",
+		"topics": "Topics",
 		"search": "Search"
 	},
 	"home": {
@@ -21,21 +21,21 @@
 	"chapter": {
 		"notFound": "Chapter not found."
 	},
-	"attributes": {
-		"heading": "Attributes",
-		"description": "Index of all attributes annotated in the sources: virtues, topics, events, places, and people.",
-		"noOccurrences": "No paragraphs annotated with this attribute.",
+	"topics": {
+		"heading": "Topics",
+		"description": "Index of all topics annotated in the sources: virtues, themes, events, places, and people.",
+		"noOccurrences": "No paragraphs annotated with this topic.",
 		"passagesHeading": "Passages",
 		"types": {
 			"virtue": "Virtue",
-			"topic": "Topic",
+			"theme": "Theme",
 			"event": "Event",
 			"place": "Place",
 			"person": "Person"
 		},
 		"typePlurals": {
 			"virtue": "Virtues",
-			"topic": "Topics",
+			"theme": "Themes",
 			"event": "Events",
 			"place": "Places",
 			"person": "People"

@@ -55,8 +55,8 @@ pub fn create_tables(conn: &Connection) {
             book_id         TEXT NOT NULL,
             paragraph_id    TEXT NOT NULL,
             paragraph_to_id TEXT,
-            attr_type       TEXT NOT NULL,
-            attr_value      TEXT NOT NULL,
+            topic_type       TEXT NOT NULL,
+            topic_value      TEXT NOT NULL,
             by_whom         TEXT NOT NULL DEFAULT 'ai',
             by_type         TEXT NOT NULL DEFAULT 'ai',
             verified        INTEGER NOT NULL DEFAULT 0,
@@ -64,12 +64,12 @@ pub fn create_tables(conn: &Connection) {
             FOREIGN KEY (book_id, paragraph_id) REFERENCES paragraphs(book_id, id)
         );
 
-        CREATE TABLE IF NOT EXISTS attribute_pages (
-            attr_type       TEXT NOT NULL,
-            attr_value      TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS topic_pages (
+            topic_type       TEXT NOT NULL,
+            topic_value      TEXT NOT NULL,
             title           TEXT NOT NULL,
             content         TEXT NOT NULL,
-            PRIMARY KEY (attr_type, attr_value)
+            PRIMARY KEY (topic_type, topic_value)
         );
 
         CREATE TABLE IF NOT EXISTS relations (
@@ -149,13 +149,13 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     }
 }
 
-pub fn insert_attribute_page(conn: &Connection, page: &crate::models::AttributePage) {
+pub fn insert_topic_page(conn: &Connection, page: &crate::models::TopicPage) {
     conn.execute(
-        "INSERT OR REPLACE INTO attribute_pages (attr_type, attr_value, title, content)
+        "INSERT OR REPLACE INTO topic_pages (topic_type, topic_value, title, content)
          VALUES (?1, ?2, ?3, ?4)",
-        params![page.meta.attr_type, page.meta.attr_value, page.meta.title, page.content],
+        params![page.meta.topic_type, page.meta.topic_value, page.meta.title, page.content],
     )
-    .expect("Failed to insert attribute page");
+    .expect("Failed to insert topic page");
 }
 
 pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
@@ -243,24 +243,24 @@ pub fn create_fts_index(conn: &Connection) {
 }
 
 /// Insert a book's annotation sidecar (FORMAT.md §10). Each `type:value` pair in
-/// an entry's `attributes` becomes an annotation row; each `reltype:target` pair
-/// in `relations` becomes a relation row. Returns (attribute rows, relation rows).
+/// an entry's `topics` becomes an annotation row; each `reltype:target` pair
+/// in `relations` becomes a relation row. Returns (topic rows, relation rows).
 pub fn insert_annotations(conn: &Connection, book_id: &str, annotations: &[Annotation]) -> (usize, usize) {
-    let mut attr_rows = 0;
+    let mut topic_rows = 0;
     let mut rel_rows = 0;
     for a in annotations {
-        for pair in csv_pairs(a.attributes.as_deref()) {
-            let Some((attr_type, attr_value)) = pair.split_once(':') else {
-                eprintln!("  warning: skipping malformed attribute '{pair}' in {book_id}/{}", a.paragraph);
+        for pair in csv_pairs(a.topics.as_deref()) {
+            let Some((topic_type, topic_value)) = pair.split_once(':') else {
+                eprintln!("  warning: skipping malformed topic '{pair}' in {book_id}/{}", a.paragraph);
                 continue;
             };
             conn.execute(
-                "INSERT INTO annotations (book_id, paragraph_id, paragraph_to_id, attr_type, attr_value, by_whom, by_type, verified, comment)
+                "INSERT INTO annotations (book_id, paragraph_id, paragraph_to_id, topic_type, topic_value, by_whom, by_type, verified, comment)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                params![book_id, a.paragraph, a.paragraph_to, attr_type.trim(), attr_value.trim(), a.by, a.by_type, a.verified, a.comment],
+                params![book_id, a.paragraph, a.paragraph_to, topic_type.trim(), topic_value.trim(), a.by, a.by_type, a.verified, a.comment],
             )
             .expect("Failed to insert annotation");
-            attr_rows += 1;
+            topic_rows += 1;
         }
 
         for pair in csv_pairs(a.relations.as_deref()) {
@@ -282,7 +282,7 @@ pub fn insert_annotations(conn: &Connection, book_id: &str, annotations: &[Annot
             rel_rows += 1;
         }
     }
-    (attr_rows, rel_rows)
+    (topic_rows, rel_rows)
 }
 
 /// Split a CSV-of-pairs string into trimmed, non-empty items.
@@ -299,7 +299,7 @@ mod tests {
     use crate::models::Annotation;
 
     #[test]
-    fn expands_attributes_and_relations() {
+    fn expands_topics_and_relations() {
         let conn = Connection::open_in_memory().unwrap();
         conn.execute_batch("PRAGMA foreign_keys=OFF;").unwrap();
         create_tables(&conn);
@@ -307,15 +307,15 @@ mod tests {
         let a = Annotation {
             paragraph: "p1".into(),
             paragraph_to: None,
-            attributes: Some("person:st_francis, place:assisi".into()),
+            topics: Some("person:st_francis, place:assisi".into()),
             relations: Some("same_episode:LMj-mir10-6, related_to:2Cel-121".into()),
             by: "Tester".into(),
             by_type: "human".into(),
             verified: true,
             comment: Some("note".into()),
         };
-        let (attr_rows, rel_rows) = insert_annotations(&conn, "1Cel", &[a]);
-        assert_eq!((attr_rows, rel_rows), (2, 2));
+        let (topic_rows, rel_rows) = insert_annotations(&conn, "1Cel", &[a]);
+        assert_eq!((topic_rows, rel_rows), (2, 2));
 
         // first hyphen separates book id from (hyphenated) paragraph id
         let (tb, tp): (String, String) = conn

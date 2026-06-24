@@ -15,7 +15,7 @@
 	} from '$lib';
 	import { t, getCorpusLang } from '$lib/i18n';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
-	import { attrColors } from '$lib/attrColors';
+	import { topicColors } from '$lib/topicColors';
 
 	const bookId = $derived($page.params.book_id ?? '');
 	const chapterId = $derived($page.params.chapter_id ?? '');
@@ -237,11 +237,11 @@
 							<div class="mt-1 ml-0 sm:ml-10 flex flex-wrap gap-1">
 								{#each ann as a}
 									<a
-										href="/attributes/{a.attr_type}/{a.attr_value}"
-										class="inline-block max-w-full break-words text-xs px-2 py-0.5 rounded-full no-underline transition-colors {attrColors(a.attr_type, true)}"
+										href="/topics/{a.topic_type}/{a.topic_value}"
+										class="inline-block max-w-full break-words text-xs px-2 py-0.5 rounded-full no-underline transition-colors {topicColors(a.topic_type, true)}"
 										title={a.comment ?? ''}
 									>
-										{a.attr_value} ({a.attr_type}{a.verified ? ' ✓' : ''})
+										{a.topic_value} ({a.topic_type}{a.verified ? ' ✓' : ''})
 									</a>
 								{/each}
 							</div>

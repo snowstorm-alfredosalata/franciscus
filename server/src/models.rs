@@ -56,7 +56,7 @@ pub struct Annotation {
     pub paragraph_to: Option<String>,
     /// Comma-separated `type:value` pairs; expanded into one annotation row each.
     #[serde(default)]
-    pub attributes: Option<String>,
+    pub topics: Option<String>,
     /// Comma-separated `reltype:target` pairs; expanded into one relation row each.
     /// `target` is a cross-work paragraph key `<book_id>-<paragraph_id>`.
     #[serde(default)]
@@ -71,14 +71,14 @@ pub struct Annotation {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct AttributePageMeta {
-    pub attr_type: String,
-    pub attr_value: String,
+pub struct TopicPageMeta {
+    pub topic_type: String,
+    pub topic_value: String,
     pub title: String,
 }
 
 #[derive(Debug, Clone)]
-pub struct AttributePage {
-    pub meta: AttributePageMeta,
+pub struct TopicPage {
+    pub meta: TopicPageMeta,
     pub content: String,
 }

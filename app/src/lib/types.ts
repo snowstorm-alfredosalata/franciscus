@@ -36,17 +36,17 @@ export interface Annotation {
 	book_id: string;
 	paragraph_id: string;
 	paragraph_to_id: string | null;
-	attr_type: string;
-	attr_value: string;
+	topic_type: string;
+	topic_value: string;
 	by_whom: string;
 	by_type: string;
 	verified: boolean;
 	comment: string | null;
 }
 
-export interface AttributePage {
-	attr_type: string;
-	attr_value: string;
+export interface TopicPage {
+	topic_type: string;
+	topic_value: string;
 	title: string;
 	content: string;
 }

@@ -8,7 +8,7 @@
 	},
 	"nav": {
 		"sources": "Fonti",
-		"attributes": "Attributi",
+		"topics": "Argomenti",
 		"search": "Ricerca"
 	},
 	"home": {
@@ -21,21 +21,21 @@
 	"chapter": {
 		"notFound": "Capitolo non trovato."
 	},
-	"attributes": {
-		"heading": "Attributi",
-		"description": "Indice di tutti gli attributi annotati nelle fonti: virtù, temi, eventi, luoghi e persone.",
-		"noOccurrences": "Nessun paragrafo annotato con questo attributo.",
+	"topics": {
+		"heading": "Argomenti",
+		"description": "Indice di tutti gli argomenti annotati nelle fonti: virtù, temi, eventi, luoghi e persone.",
+		"noOccurrences": "Nessun paragrafo annotato con questo argomento.",
 		"passagesHeading": "Passi",
 		"types": {
 			"virtue": "Virtù",
-			"topic": "Tema",
+			"theme": "Tema",
 			"event": "Evento",
 			"place": "Luogo",
 			"person": "Persona"
 		},
 		"typePlurals": {
 			"virtue": "Virtù",
-			"topic": "Temi",
+			"theme": "Temi",
 			"event": "Eventi",
 			"place": "Luoghi",
 			"person": "Persone"

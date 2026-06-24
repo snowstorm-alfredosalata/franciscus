@@ -1,13 +1,13 @@
 // @ts-ignore — fts5-sql-bundle's sql-wasm.js has no type declarations
 import initSqlJs from 'fts5-sql-bundle/dist/sql-wasm.js';
 import type { Database, BindParams } from 'sql.js';
-import type { BookMeta, Chapter, Paragraph, Aside, Annotation, AttributePage, ParagraphTranslation, AsideTranslation, SearchResult } from './types';
+import type { BookMeta, Chapter, Paragraph, Aside, Annotation, TopicPage, ParagraphTranslation, AsideTranslation, SearchResult } from './types';
 
 let db: Database | null = null;
 
 const DB_URL = '/franciscus.db';
 // Bump this when the shipped database changes so stale copies are evicted.
-const DB_CACHE = 'franciscus-db-v1.2';
+const DB_CACHE = 'franciscus-db-v1.3';
 
 export interface DbProgress {
 	/** bytes received so far */
@@ -174,20 +174,20 @@ export function getAsides(bookId: string, chapterId: string): Aside[] {
 	);
 }
 
-export function getAttributePages(): AttributePage[] {
-	return queryAll<AttributePage>(
-		'SELECT attr_type, attr_value, title, content FROM attribute_pages ORDER BY attr_type, title'
+export function getTopicPages(): TopicPage[] {
+	return queryAll<TopicPage>(
+		'SELECT topic_type, topic_value, title, content FROM topic_pages ORDER BY topic_type, title'
 	);
 }
 
-export function getAttributePage(attrType: string, attrValue: string): AttributePage | null {
-	return queryOne<AttributePage>(
-		'SELECT attr_type, attr_value, title, content FROM attribute_pages WHERE attr_type = $type AND attr_value = $value',
-		{ $type: attrType, $value: attrValue }
+export function getTopicPage(topicType: string, topicValue: string): TopicPage | null {
+	return queryOne<TopicPage>(
+		'SELECT topic_type, topic_value, title, content FROM topic_pages WHERE topic_type = $type AND topic_value = $value',
+		{ $type: topicType, $value: topicValue }
 	);
 }
 
-export interface AttributeOccurrence {
+export interface TopicOccurrence {
 	book_id: string;
 	book_title: string;
 	chapter_id: string;
@@ -198,34 +198,34 @@ export interface AttributeOccurrence {
 	comment: string | null;
 }
 
-export function getAttributeOccurrences(attrType: string, attrValue: string): AttributeOccurrence[] {
-	return queryAll<AttributeOccurrence>(
+export function getTopicOccurrences(topicType: string, topicValue: string): TopicOccurrence[] {
+	return queryAll<TopicOccurrence>(
 		`SELECT a.book_id, b.title AS book_title, p.chapter_id, c.title AS chapter_title,
 		        a.paragraph_id, p.label AS paragraph_label, p.content, a.comment
 		 FROM annotations a
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
 		 JOIN books b ON a.book_id = b.id
 		 JOIN chapters c ON p.book_id = c.book_id AND p.chapter_id = c.id
-		 WHERE a.attr_type = $type AND a.attr_value = $value
+		 WHERE a.topic_type = $type AND a.topic_value = $value
 		 ORDER BY a.book_id, c.position, p.position`,
-		{ $type: attrType, $value: attrValue }
+		{ $type: topicType, $value: topicValue }
 	);
 }
 
-export interface AttributeSummary {
-	attr_type: string;
-	attr_value: string;
+export interface TopicSummary {
+	topic_type: string;
+	topic_value: string;
 	count: number;
 	has_page: number;
 }
 
-export function getDistinctAttributes(): AttributeSummary[] {
-	return queryAll<AttributeSummary>(
-		`SELECT a.attr_type, a.attr_value, COUNT(*) AS count,
-		        EXISTS(SELECT 1 FROM attribute_pages ap WHERE ap.attr_type = a.attr_type AND ap.attr_value = a.attr_value) AS has_page
+export function getDistinctTopics(): TopicSummary[] {
+	return queryAll<TopicSummary>(
+		`SELECT a.topic_type, a.topic_value, COUNT(*) AS count,
+		        EXISTS(SELECT 1 FROM topic_pages ap WHERE ap.topic_type = a.topic_type AND ap.topic_value = a.topic_value) AS has_page
 		 FROM annotations a
-		 GROUP BY a.attr_type, a.attr_value
-		 ORDER BY a.attr_type, a.attr_value`
+		 GROUP BY a.topic_type, a.topic_value
+		 ORDER BY a.topic_type, a.topic_value`
 	);
 }
 
@@ -276,7 +276,7 @@ export function getAsideTranslations(
 
 export function getChapterAnnotations(bookId: string, chapterId: string): Annotation[] {
 	return queryAll<Annotation>(
-		`SELECT a.id, a.book_id, a.paragraph_id, a.paragraph_to_id, a.attr_type, a.attr_value, a.by_whom, a.by_type, a.verified, a.comment
+		`SELECT a.id, a.book_id, a.paragraph_id, a.paragraph_to_id, a.topic_type, a.topic_value, a.by_whom, a.by_type, a.verified, a.comment
 		 FROM annotations a
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
 		 WHERE a.book_id = $bookId AND p.chapter_id = $chapterId`,

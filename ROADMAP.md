@@ -26,7 +26,7 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] Adopt an UI library to simplify pages (Shadcn seems to have a svelte integration)
 - [x] Mobile-responsive layout
 - [x] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility.
-- [ ] Expressive style, golden-crimson-white (light mode) and golden-royal blue-dark night blue (dark mode) palette. Should be reminiscent of medieval manuscripts but with a modern, readable interpretation. 
+- [x] Expressive style, golden-crimson-white (light mode) and golden-royal blue-dark night blue (dark mode) palette. Should be reminiscent of medieval manuscripts but with a modern, readable interpretation. 
 - [ ] Full, first-class breadcrumbs
 
 ### Reader UI
@@ -36,13 +36,13 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [ ] Scripture references (`<ref>` tags) rendered as links to [bibbiaedu.it Nova Vulgata](https://www.bibbiaedu.it/NOVAVULGATA/nt/) (`/nt/<book>/<ch>/`)
 - [ ] "Copy citation" action (copies a formatted reference to clipboard)
 
-### Annotations & Attributes
+### Annotations & Topics
 
-- [x] Annotation data model in the DB (paragraph-keyed, typed attributes, provenance field)
-- [x] Attribute page ingestion in the Rust CLI (parse frontmatter + markdown, insert into DB, load translations)
-- [x] Attribute page rendering: curated intro + auto-generated passage list for each virtue / topic / person / place
-- [~] Curated attribute list lock-down
-- [ ] AI annotation pipeline, pass 1: segmentation, themes, biblical allusions (high confidence)
+- [x] Annotation data model in the DB (paragraph-keyed, typed topics, provenance field)
+- [x] Topic page ingestion in the Rust CLI (parse frontmatter + markdown, insert into DB, load translations)
+- [x] Topic page rendering: curated intro + auto-generated passage list for each virtue / theme / person / place
+- [x] Curated topic list lock-down
+- [x] AI annotation pipeline, pass 1: segmentation, themes, biblical allusions (high confidence)
 - [ ] AI annotation pipeline, pass 2: cross-work parallels seeded from *Fontes Franciscani* concordances (requires review)
 
 ### Internationalization

@@ -31,8 +31,8 @@ franciscus-data/          server/                  app/
 
 The app distinguishes two language layers:
 
-- **Application language (English):** All UI text (labels, navigation, error messages), annotation evidence strings, and attribute page descriptions are written in English. The HTML document declares `<html lang="en">`.
-- **Source language (Latin):** The source texts under `franciscus-data/books/` are in medieval Latin. Attribute values (e.g. `paupertas`, `conversio`) and relation types (e.g. `dipende_da`) use Latin/domain identifiers — these are machine keys, not user-facing labels.
+- **Application language (English):** All UI text (labels, navigation, error messages), annotation evidence strings, and topic page descriptions are written in English. The HTML document declares `<html lang="en">`.
+- **Source language (Latin):** The source texts under `franciscus-data/books/` are in medieval Latin. Topic values (e.g. `paupertas`, `conversio`) and relation types (e.g. `dipende_da`) use Latin/domain identifiers — these are machine keys, not user-facing labels.
 
 ### Design decisions
 
