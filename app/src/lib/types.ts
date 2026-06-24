@@ -35,11 +35,13 @@ export interface Annotation {
 	id: number;
 	book_id: string;
 	paragraph_id: string;
+	paragraph_to_id: string | null;
 	attr_type: string;
 	attr_value: string;
 	by_whom: string;
+	by_type: string;
 	verified: boolean;
-	evidence: string | null;
+	comment: string | null;
 }
 
 export interface AttributePage {
@@ -57,8 +59,9 @@ export interface Relation {
 	target_paragraph_id: string;
 	relation_type: string;
 	by_whom: string;
+	by_type: string;
 	verified: boolean;
-	evidence: string | null;
+	comment: string | null;
 }
 
 export interface ParagraphTranslation {

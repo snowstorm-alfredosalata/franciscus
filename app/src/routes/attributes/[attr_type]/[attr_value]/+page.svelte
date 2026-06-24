@@ -77,9 +77,9 @@
 						<div lang="la" class="font-serif text-foreground leading-relaxed">
 							{@html occ.content}
 						</div>
-						{#if occ.evidence}
+						{#if occ.comment}
 							<p class="mt-2 text-sm text-muted-foreground italic">
-								{occ.evidence}
+								{occ.comment}
 							</p>
 						{/if}
 					</div>

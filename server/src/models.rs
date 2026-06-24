@@ -41,38 +41,33 @@ pub struct ParsedBook {
     pub chapters: Vec<ParsedChapter>,
 }
 
-// --- JSON annotation file structures ---
+// --- JSON annotation sidecar (FORMAT.md §10) ---
+// File is `books/<book_id>.json`, a flat array; book_id comes from the filename.
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct AnnotationEntry {
-    pub book_id: String,
-    pub paragraph_id: String,
-    pub attr_type: String,
-    pub attr_value: String,
-    pub by: String,
-    pub verified: bool,
-    #[serde(default)]
-    pub evidence: Option<String>,
+fn default_by_type() -> String {
+    "ai".to_string()
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct RelationEntry {
-    pub source_book_id: String,
-    pub source_paragraph_id: String,
-    pub target_book_id: String,
-    pub target_paragraph_id: String,
-    pub relation_type: String,
+pub struct Annotation {
+    pub paragraph: String,
+    /// When the annotation spans a paragraph range, the last paragraph.
+    #[serde(default)]
+    pub paragraph_to: Option<String>,
+    /// Comma-separated `type:value` pairs; expanded into one annotation row each.
+    #[serde(default)]
+    pub attributes: Option<String>,
+    /// Comma-separated `reltype:target` pairs; expanded into one relation row each.
+    /// `target` is a cross-work paragraph key `<book_id>-<paragraph_id>`.
+    #[serde(default)]
+    pub relations: Option<String>,
     pub by: String,
+    #[serde(default = "default_by_type")]
+    pub by_type: String,
+    #[serde(default)]
     pub verified: bool,
     #[serde(default)]
-    pub evidence: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct AnnotationFile {
-    pub annotations: Vec<AnnotationEntry>,
-    #[serde(default)]
-    pub relations: Vec<RelationEntry>,
+    pub comment: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

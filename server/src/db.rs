@@ -54,11 +54,13 @@ pub fn create_tables(conn: &Connection) {
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             book_id         TEXT NOT NULL,
             paragraph_id    TEXT NOT NULL,
+            paragraph_to_id TEXT,
             attr_type       TEXT NOT NULL,
             attr_value      TEXT NOT NULL,
             by_whom         TEXT NOT NULL DEFAULT 'ai',
+            by_type         TEXT NOT NULL DEFAULT 'ai',
             verified        INTEGER NOT NULL DEFAULT 0,
-            evidence        TEXT,
+            comment         TEXT,
             FOREIGN KEY (book_id, paragraph_id) REFERENCES paragraphs(book_id, id)
         );
 
@@ -78,10 +80,11 @@ pub fn create_tables(conn: &Connection) {
             target_paragraph_id TEXT NOT NULL,
             relation_type       TEXT NOT NULL,
             by_whom             TEXT NOT NULL DEFAULT 'ai',
+            by_type             TEXT NOT NULL DEFAULT 'ai',
             verified            INTEGER NOT NULL DEFAULT 0,
-            evidence            TEXT,
-            FOREIGN KEY (source_book_id, source_paragraph_id) REFERENCES paragraphs(book_id, id),
-            FOREIGN KEY (target_book_id, target_paragraph_id) REFERENCES paragraphs(book_id, id)
+            comment             TEXT,
+            -- ponytail: no FK on target; cross-work parallels may point at any book
+            FOREIGN KEY (source_book_id, source_paragraph_id) REFERENCES paragraphs(book_id, id)
         );
 
         CREATE TABLE IF NOT EXISTS paragraph_translations (
@@ -239,25 +242,89 @@ pub fn create_fts_index(conn: &Connection) {
         .expect("Failed to optimize FTS index");
 }
 
-pub fn insert_annotations(conn: &Connection, file: &AnnotationFile) {
-    for a in &file.annotations {
-        conn.execute(
-            "INSERT INTO annotations (book_id, paragraph_id, attr_type, attr_value, by_whom, verified, evidence)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![a.book_id, a.paragraph_id, a.attr_type, a.attr_value, a.by, a.verified, a.evidence],
-        )
-        .expect("Failed to insert annotation");
+/// Insert a book's annotation sidecar (FORMAT.md §10). Each `type:value` pair in
+/// an entry's `attributes` becomes an annotation row; each `reltype:target` pair
+/// in `relations` becomes a relation row. Returns (attribute rows, relation rows).
+pub fn insert_annotations(conn: &Connection, book_id: &str, annotations: &[Annotation]) -> (usize, usize) {
+    let mut attr_rows = 0;
+    let mut rel_rows = 0;
+    for a in annotations {
+        for pair in csv_pairs(a.attributes.as_deref()) {
+            let Some((attr_type, attr_value)) = pair.split_once(':') else {
+                eprintln!("  warning: skipping malformed attribute '{pair}' in {book_id}/{}", a.paragraph);
+                continue;
+            };
+            conn.execute(
+                "INSERT INTO annotations (book_id, paragraph_id, paragraph_to_id, attr_type, attr_value, by_whom, by_type, verified, comment)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                params![book_id, a.paragraph, a.paragraph_to, attr_type.trim(), attr_value.trim(), a.by, a.by_type, a.verified, a.comment],
+            )
+            .expect("Failed to insert annotation");
+            attr_rows += 1;
+        }
+
+        for pair in csv_pairs(a.relations.as_deref()) {
+            let Some((rel_type, target)) = pair.split_once(':') else {
+                eprintln!("  warning: skipping malformed relation '{pair}' in {book_id}/{}", a.paragraph);
+                continue;
+            };
+            // ponytail: target key is `<book_id>-<paragraph_id>`; book ids contain no '-'
+            let Some((target_book, target_par)) = target.trim().split_once('-') else {
+                eprintln!("  warning: skipping relation target '{}' (expected <book>-<paragraph>) in {book_id}/{}", target.trim(), a.paragraph);
+                continue;
+            };
+            conn.execute(
+                "INSERT INTO relations (source_book_id, source_paragraph_id, target_book_id, target_paragraph_id, relation_type, by_whom, by_type, verified, comment)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                params![book_id, a.paragraph, target_book, target_par, rel_type.trim(), a.by, a.by_type, a.verified, a.comment],
+            )
+            .expect("Failed to insert relation");
+            rel_rows += 1;
+        }
     }
-    for r in &file.relations {
-        conn.execute(
-            "INSERT INTO relations (source_book_id, source_paragraph_id, target_book_id, target_paragraph_id, relation_type, by_whom, verified, evidence)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-            params![
-                r.source_book_id, r.source_paragraph_id,
-                r.target_book_id, r.target_paragraph_id,
-                r.relation_type, r.by, r.verified, r.evidence
-            ],
-        )
-        .expect("Failed to insert relation");
+    (attr_rows, rel_rows)
+}
+
+/// Split a CSV-of-pairs string into trimmed, non-empty items.
+fn csv_pairs(s: Option<&str>) -> impl Iterator<Item = &str> {
+    s.unwrap_or("")
+        .split(',')
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::Annotation;
+
+    #[test]
+    fn expands_attributes_and_relations() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=OFF;").unwrap();
+        create_tables(&conn);
+
+        let a = Annotation {
+            paragraph: "p1".into(),
+            paragraph_to: None,
+            attributes: Some("person:st_francis, place:assisi".into()),
+            relations: Some("same_episode:LMj-mir10-6, related_to:2Cel-121".into()),
+            by: "Tester".into(),
+            by_type: "human".into(),
+            verified: true,
+            comment: Some("note".into()),
+        };
+        let (attr_rows, rel_rows) = insert_annotations(&conn, "1Cel", &[a]);
+        assert_eq!((attr_rows, rel_rows), (2, 2));
+
+        // first hyphen separates book id from (hyphenated) paragraph id
+        let (tb, tp): (String, String) = conn
+            .query_row(
+                "SELECT target_book_id, target_paragraph_id FROM relations WHERE relation_type = 'same_episode'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((tb.as_str(), tp.as_str()), ("LMj", "mir10-6"));
     }
 }

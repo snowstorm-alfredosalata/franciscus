@@ -7,7 +7,7 @@ let db: Database | null = null;
 
 const DB_URL = '/franciscus.db';
 // Bump this when the shipped database changes so stale copies are evicted.
-const DB_CACHE = 'franciscus-db-v1';
+const DB_CACHE = 'franciscus-db-v1.2';
 
 export interface DbProgress {
 	/** bytes received so far */
@@ -195,13 +195,13 @@ export interface AttributeOccurrence {
 	paragraph_id: string;
 	paragraph_label: string | null;
 	content: string;
-	evidence: string | null;
+	comment: string | null;
 }
 
 export function getAttributeOccurrences(attrType: string, attrValue: string): AttributeOccurrence[] {
 	return queryAll<AttributeOccurrence>(
 		`SELECT a.book_id, b.title AS book_title, p.chapter_id, c.title AS chapter_title,
-		        a.paragraph_id, p.label AS paragraph_label, p.content, a.evidence
+		        a.paragraph_id, p.label AS paragraph_label, p.content, a.comment
 		 FROM annotations a
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
 		 JOIN books b ON a.book_id = b.id
@@ -276,7 +276,7 @@ export function getAsideTranslations(
 
 export function getChapterAnnotations(bookId: string, chapterId: string): Annotation[] {
 	return queryAll<Annotation>(
-		`SELECT a.id, a.book_id, a.paragraph_id, a.attr_type, a.attr_value, a.by_whom, a.verified, a.evidence
+		`SELECT a.id, a.book_id, a.paragraph_id, a.paragraph_to_id, a.attr_type, a.attr_value, a.by_whom, a.by_type, a.verified, a.comment
 		 FROM annotations a
 		 JOIN paragraphs p ON a.book_id = p.book_id AND a.paragraph_id = p.id
 		 WHERE a.book_id = $bookId AND p.chapter_id = $chapterId`,
