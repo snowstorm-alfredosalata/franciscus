@@ -7,7 +7,7 @@ let db: Database | null = null;
 
 const DB_URL = '/franciscus.db';
 // Bump this when the shipped database changes so stale copies are evicted.
-const DB_CACHE = 'franciscus-db-v1.6';
+const DB_CACHE = 'franciscus-db-v1.6.2';
 
 export interface DbProgress {
 	/** bytes received so far */

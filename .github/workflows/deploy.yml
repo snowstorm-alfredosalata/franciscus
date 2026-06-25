@@ -1,0 +1,113 @@
+# Build the Franciscus SPA + SQLite corpus and publish it to GitHub Pages.
+#
+# This workflow lives in the `franciscus` repo (app + Rust build CLI) but the
+# corpus it ships lives in a *separate* repo, `franciscus-data`. We therefore
+# check out both side by side so the Makefile's default `DATA_DIR=../franciscus-data`
+# resolves without any overrides, then run the same `make app` target a developer
+# would run locally.
+#
+# Publishing uses the official GitHub Pages "Actions" source (artifact upload +
+# deploy-pages) — no gh-pages branch. See DEPLOYMENT.md for the full rationale,
+# prerequisites, and how to wire up automatic rebuilds when the data repo changes.
+
+name: Deploy to GitHub Pages
+
+on:
+  # Build on every push to the default branch of the app repo.
+  push:
+    branches: [master]
+  # Allow manual runs from the Actions tab (e.g. to redeploy after a Pages
+  # settings change without a code commit).
+  workflow_dispatch:
+  # Let the data repo kick off a rebuild when the corpus changes. The companion
+  # workflow in franciscus-data sends `repository_dispatch` with this type.
+  # See DEPLOYMENT.md § "Rebuilding when the corpus changes".
+  repository_dispatch:
+    types: [corpus-updated]
+
+# Least-privilege token + the OIDC id-token the Pages deploy needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deploys at once; let an in-progress deploy finish rather than
+# cancelling it (a half-deployed Pages site is worse than a slightly stale one).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Check the app repo into ./franciscus and the data repo into
+      # ./franciscus-data so they sit as siblings — this is exactly the layout
+      # the Makefile assumes (DATA_DIR ?= ../franciscus-data).
+      - name: Checkout app repo (franciscus)
+        uses: actions/checkout@v4
+        with:
+          path: franciscus
+
+      - name: Checkout data repo (franciscus-data)
+        uses: actions/checkout@v4
+        with:
+          repository: snowstorm-alfredosalata/franciscus-data
+          path: franciscus-data
+          # Once franciscus-data is public, the default GITHUB_TOKEN can read it.
+          # While it is still private, set a DATA_REPO_TOKEN secret (a PAT or a
+          # fine-grained token with read access to franciscus-data) and this
+          # falls back to it automatically.
+          token: ${{ secrets.DATA_REPO_TOKEN || github.token }}
+          # Pin a ref if you ever want to deploy from a tag instead of the tip
+          # of the corpus's default branch:
+          # ref: master
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      # Cache cargo registry + the server's target/ dir. Keyed on Cargo.lock so
+      # the cache invalidates when dependencies change.
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: franciscus/server
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: franciscus/app/package-lock.json
+
+      # `make app` == install (npm ci-equivalent + copy the FTS5 wasm) + db
+      # (cargo run -- build) + npm run build. Output lands in app/build/.
+      - name: Build corpus DB and static site
+        working-directory: franciscus
+        run: make app
+
+      # Custom-domain hosting: GitHub Pages needs a CNAME file in the published
+      # artifact. We write it from a repo variable so the domain isn't hardcoded
+      # here. Set it under Settings → Secrets and variables → Actions → Variables
+      # (name: PAGES_CUSTOM_DOMAIN, value e.g. franciscus.example.org).
+      # Alternatively, commit the file to app/static/CNAME and delete this step —
+      # adapter-static copies static/ verbatim into build/.
+      - name: Write CNAME for custom domain
+        if: vars.PAGES_CUSTOM_DOMAIN != ''
+        run: echo "${{ vars.PAGES_CUSTOM_DOMAIN }}" > franciscus/app/build/CNAME
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: franciscus/app/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
