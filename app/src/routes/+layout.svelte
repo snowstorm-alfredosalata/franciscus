@@ -1,6 +1,8 @@
 <script lang="ts">
 	import '../app.css';
+	import { afterNavigate } from '$app/navigation';
 	import { initDb, type DbProgress } from '$lib';
+	import { resetTrail } from '$lib/trail.svelte.js';
 	import LanguagePicker from '$lib/LanguagePicker.svelte';
 	import DecorativeImage from '$lib/DecorativeImage.svelte';
 	import TopNav from '$lib/TopNav.svelte';
@@ -9,6 +11,15 @@
 	import { t, getUiLang } from '$lib/i18n';
 
 	let { children } = $props();
+
+	// Hubs are entry points, not waypoints: landing on one clears the breadcrumb
+	// trail so the menu acts as a fresh start. Content pages (book / chapter /
+	// topic) record themselves and are left untouched here.
+	const TRAIL_HUBS = new Set(['/', '/topics', '/about', '/contact', '/contribute']);
+	afterNavigate((nav) => {
+		const routeId = nav.to?.route.id;
+		if (routeId && TRAIL_HUBS.has(routeId)) resetTrail();
+	});
 
 	let ready = $state(false);
 	let error = $state<string | null>(null);

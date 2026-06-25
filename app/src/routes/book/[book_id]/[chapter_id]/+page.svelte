@@ -15,7 +15,8 @@
 		type Annotation
 	} from '$lib';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
+	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
+	import { recordPage } from '$lib/trail.svelte.js';
 	import { topicColors } from '$lib/topicColors';
 
 	const bookId = $derived($page.params.book_id ?? '');
@@ -26,6 +27,19 @@
 	const book = $derived(getBook(bookId, corpusLang));
 	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
 	const chapter = $derived(chapters.find((c) => c.id === chapterId));
+
+	$effect(() => {
+		if (!book || !chapter) return;
+		recordPage([
+			{ id: `/book/${bookId}`, label: book.title, href: `/book/${bookId}` },
+			{
+				id: `/book/${bookId}/${chapterId}`,
+				label: chapter.title,
+				href: `/book/${bookId}/${chapterId}`,
+				parentId: `/book/${bookId}`
+			}
+		]);
+	});
 
 	// Per-topic UI-lang slug used as the pill label, with `_` rendered as a
 	// space. Missing entries fall back to the canonical topic_value at the
@@ -215,21 +229,7 @@
 
 {#if book && chapter}
 	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
-		<Breadcrumb.Root class="mb-6">
-			<Breadcrumb.List class="text-sm text-muted-foreground">
-				<Breadcrumb.Item>
-					<Breadcrumb.Link href="/" class="hover:text-foreground">{t('nav.sources')}</Breadcrumb.Link>
-				</Breadcrumb.Item>
-				<Breadcrumb.Separator>/</Breadcrumb.Separator>
-				<Breadcrumb.Item>
-					<Breadcrumb.Link href="/book/{bookId}" class="hover:text-foreground">{book.title}</Breadcrumb.Link>
-				</Breadcrumb.Item>
-				<Breadcrumb.Separator>/</Breadcrumb.Separator>
-				<Breadcrumb.Item>
-					<Breadcrumb.Page class="text-foreground">{chapter.title}</Breadcrumb.Page>
-				</Breadcrumb.Item>
-			</Breadcrumb.List>
-		</Breadcrumb.Root>
+		<Breadcrumbs />
 
 		<h1 class="text-2xl font-display font-bold text-foreground mb-6">{chapter.title}</h1>
 

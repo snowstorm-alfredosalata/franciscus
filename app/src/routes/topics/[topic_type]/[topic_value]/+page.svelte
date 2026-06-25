@@ -8,7 +8,8 @@
 		type TopicPage,
 		type TopicOccurrence
 	} from '$lib';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
+	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
+	import { recordPage } from '$lib/trail.svelte.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { topicColors } from '$lib/topicColors';
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
@@ -38,24 +39,17 @@
 	const occurrences = $derived(getTopicOccurrences(topicType, topicValue, corpusLang));
 
 	const displayTitle = $derived(topicPage?.description ?? topicValue.replaceAll('_', ' '));
+
+	$effect(() => {
+		// Only real topics become waypoints; the unknown-slug fallback does not.
+		if (!topicPage && occurrences.length === 0) return;
+		const href = `/topics/${topicType}/${topicValue}`;
+		recordPage([{ id: href, label: displayTitle, href }]);
+	});
 </script>
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
-	<Breadcrumb.Root class="mb-6">
-		<Breadcrumb.List class="text-sm text-muted-foreground">
-			<Breadcrumb.Item>
-				<Breadcrumb.Link href="/" class="hover:text-foreground">{t('nav.sources')}</Breadcrumb.Link>
-			</Breadcrumb.Item>
-			<Breadcrumb.Separator>/</Breadcrumb.Separator>
-			<Breadcrumb.Item>
-				<Breadcrumb.Link href="/topics" class="hover:text-foreground">{t('nav.topics')}</Breadcrumb.Link>
-			</Breadcrumb.Item>
-			<Breadcrumb.Separator>/</Breadcrumb.Separator>
-			<Breadcrumb.Item>
-				<Breadcrumb.Page class="text-foreground">{displayTitle}</Breadcrumb.Page>
-			</Breadcrumb.Item>
-		</Breadcrumb.List>
-	</Breadcrumb.Root>
+	<Breadcrumbs />
 
 	<div class="mb-6">
 		<Badge class="mb-2 rounded-full font-normal {topicColors(topicType)}">

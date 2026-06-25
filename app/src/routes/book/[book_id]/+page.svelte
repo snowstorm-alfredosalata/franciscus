@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { getBook, getChapters, type BookMeta, type Chapter } from '$lib';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
+	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
+	import { recordPage } from '$lib/trail.svelte.js';
 	import { t, getCorpusLang } from '$lib/i18n';
 
 	const bookId = $derived($page.params.book_id ?? '');
 	const corpusLang = $derived(getCorpusLang());
 	const book = $derived(getBook(bookId, corpusLang));
 	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
+
+	$effect(() => {
+		if (!book) return;
+		recordPage([{ id: `/book/${bookId}`, label: book.title, href: `/book/${bookId}` }]);
+	});
 
 	const meta = $derived(
 		book
@@ -24,17 +30,7 @@
 
 {#if book}
 	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
-		<Breadcrumb.Root class="mb-6">
-			<Breadcrumb.List class="text-sm text-muted-foreground">
-				<Breadcrumb.Item>
-					<Breadcrumb.Link href="/" class="hover:text-foreground">{t('nav.sources')}</Breadcrumb.Link>
-				</Breadcrumb.Item>
-				<Breadcrumb.Separator>/</Breadcrumb.Separator>
-				<Breadcrumb.Item>
-					<Breadcrumb.Page class="text-foreground">{book.title}</Breadcrumb.Page>
-				</Breadcrumb.Item>
-			</Breadcrumb.List>
-		</Breadcrumb.Root>
+		<Breadcrumbs />
 
 		<header class="mb-8">
 			<h1 class="text-2xl font-display font-bold text-foreground">{book.title}</h1>

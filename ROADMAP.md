@@ -33,8 +33,10 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 - [x] Fix all accessibility, a11y, and aria-* related issues, and ensure reader compatibility.
 - [x] Expressive style, golden-crimson-white (light mode) and golden-royal blue-dark night blue (dark mode) palette. Should be reminiscent of medieval manuscripts but with a modern, readable interpretation. 
 - [x] Italian and English machine translation
-- [ ] Full, first-class breadcrumbs. Currently breacrumbs only show the path through the website, not the pages the usually actually traversed. 
-      Going from a verse to a topic page loses history.
+- [x] Full, first-class breadcrumbs. Breadcrumbs now follow the path the user actually traversed
+      (a session-persisted trail among content pages), not the static site map. Going from a chapter
+      to a topic page keeps the chapter in the trail; hubs (home, topics index, About/Contact/etc.)
+      reset the trail and show no breadcrumb.
 
 ### Reader UI
 - [x] Verse-level styling and interaction via the generated `<v>` elements

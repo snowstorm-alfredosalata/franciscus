@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { getDistinctTopics, type TopicSummary } from '$lib';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { topicColors } from '$lib/topicColors';
 	import { t, getUiLang } from '$lib/i18n';
 
@@ -21,18 +20,6 @@
 </script>
 
 <main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
-	<Breadcrumb.Root class="mb-6">
-		<Breadcrumb.List class="text-sm text-muted-foreground">
-			<Breadcrumb.Item>
-				<Breadcrumb.Link href="/" class="hover:text-foreground">{t('nav.sources')}</Breadcrumb.Link>
-			</Breadcrumb.Item>
-			<Breadcrumb.Separator>/</Breadcrumb.Separator>
-			<Breadcrumb.Item>
-				<Breadcrumb.Page class="text-foreground">{t('nav.topics')}</Breadcrumb.Page>
-			</Breadcrumb.Item>
-		</Breadcrumb.List>
-	</Breadcrumb.Root>
-
 	<h1 class="text-2xl font-display font-bold text-foreground mb-6">{t('topics.heading')}</h1>
 	<p class="text-muted-foreground mb-8">
 		{t('topics.description')}
