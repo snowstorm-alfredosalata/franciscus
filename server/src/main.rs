@@ -49,7 +49,7 @@ fn parse_topic_page(text: &str) -> Result<models::TopicPage, String> {
 /// raw HTML the sources rely on instead of escaping it.
 fn render_topic_body(body: &str) -> String {
     let mut options = comrak::Options::default();
-    options.render.unsafe_ = true;
+    options.render.r#unsafe = true;
     comrak::markdown_to_html(body, &options).trim().to_string()
 }
 
@@ -229,6 +229,9 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
 
     db::create_fts_index(&conn);
     println!("  fts5 search index built");
+
+    db::write_meta(&conn);
+    println!("  meta written (schema v{})", db::SCHEMA_VERSION);
 
     println!(
         "Build complete: {} book(s), {} translation(s), {} annotation(s), {} topic page(s), {} topic translation(s) -> {}",

@@ -2,6 +2,11 @@ use rusqlite::{Connection, params};
 use regex::Regex;
 use crate::models::*;
 
+/// Shape version of the DB the app expects. Bump whenever the table layout
+/// changes; mirrored into `PRAGMA user_version` and a `meta` row so the app
+/// can detect an incompatible build. Stored but not gated on yet.
+pub const SCHEMA_VERSION: u32 = 1;
+
 pub fn open_or_create(path: &str) -> Connection {
     let conn = Connection::open(path).expect("Failed to open database");
     conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")
@@ -135,9 +140,61 @@ pub fn create_tables(conn: &Connection) {
 
         CREATE INDEX IF NOT EXISTS idx_topic_lang_slug
             ON topic_page_translations(lang, lang_slug);
+
+        -- Build provenance + corpus stats, surfaced by the app (footer/About).
+        -- One writer (this CLI), travels with the .db asset.
+        CREATE TABLE IF NOT EXISTS meta (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
         ",
     )
     .expect("Failed to create tables");
+}
+
+/// Stamp build provenance and corpus stats into the `meta` table. Git commit
+/// and build time come from the environment (the Makefile computes them); they
+/// degrade to empty strings when unset (e.g. `npm run db:build`, or a non-git
+/// `DATA_DIR` tarball). Stats are read back from the just-populated tables.
+pub fn write_meta(conn: &Connection) {
+    let data_commit = std::env::var("FRANCISCUS_DATA_COMMIT").unwrap_or_default();
+    let data_commit_date = std::env::var("FRANCISCUS_DATA_COMMIT_DATE").unwrap_or_default();
+    let built_at = std::env::var("FRANCISCUS_BUILD_TIME").unwrap_or_default();
+
+    let book_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM books", [], |r| r.get(0))
+        .unwrap_or(0);
+    let languages: String = conn
+        .query_row(
+            "SELECT COALESCE(GROUP_CONCAT(lang), '')
+             FROM (SELECT DISTINCT lang FROM book_translations ORDER BY lang)",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap_or_default();
+    let annotation_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM annotations", [], |r| r.get(0))
+        .unwrap_or(0);
+
+    conn.pragma_update(None, "user_version", SCHEMA_VERSION)
+        .expect("Failed to set user_version");
+
+    let rows: [(&str, String); 7] = [
+        ("schema_version", SCHEMA_VERSION.to_string()),
+        ("data_commit", data_commit),
+        ("data_commit_date", data_commit_date),
+        ("built_at", built_at),
+        ("book_count", book_count.to_string()),
+        ("languages", languages),
+        ("annotation_count", annotation_count.to_string()),
+    ];
+    for (k, v) in &rows {
+        conn.execute(
+            "INSERT OR REPLACE INTO meta (key, value) VALUES (?1, ?2)",
+            params![k, v],
+        )
+        .expect("Failed to write meta row");
+    }
 }
 
 pub fn insert_book(conn: &Connection, book: &ParsedBook) {

@@ -1,7 +1,7 @@
 // @ts-ignore — fts5-sql-bundle's sql-wasm.js has no type declarations
 import initSqlJs from 'fts5-sql-bundle/dist/sql-wasm.js';
 import type { Database, BindParams } from 'sql.js';
-import type { BookMeta, Chapter, Paragraph, Aside, Annotation, TopicPage, ParagraphTranslation, AsideTranslation, SearchResult } from './types';
+import type { BookMeta, Chapter, Paragraph, Aside, Annotation, TopicPage, ParagraphTranslation, AsideTranslation, SearchResult, CorpusMeta } from './types';
 
 let db: Database | null = null;
 
@@ -161,6 +161,29 @@ function queryAll<T>(sql: string, params: BindParams = {}): T[] {
 function queryOne<T>(sql: string, params: BindParams = {}): T | null {
 	const results = queryAll<T>(sql, params);
 	return results[0] ?? null;
+}
+
+/** Read the `meta` key/value table into a typed object. Returns null if the
+ *  table is absent (e.g. a DB built before versioning landed). */
+export function getMeta(): CorpusMeta | null {
+	let rows: { key: string; value: string }[];
+	try {
+		rows = queryAll<{ key: string; value: string }>('SELECT key, value FROM meta');
+	} catch {
+		return null;
+	}
+	if (rows.length === 0) return null;
+	const m = new Map(rows.map((r) => [r.key, r.value]));
+	const num = (k: string) => Number(m.get(k) ?? '0') || 0;
+	return {
+		schema_version: num('schema_version'),
+		data_commit: m.get('data_commit') ?? '',
+		data_commit_date: m.get('data_commit_date') ?? '',
+		built_at: m.get('built_at') ?? '',
+		book_count: num('book_count'),
+		languages: m.get('languages') ?? '',
+		annotation_count: num('annotation_count')
+	};
 }
 
 export function getBooks(lang: string = 'la'): BookMeta[] {

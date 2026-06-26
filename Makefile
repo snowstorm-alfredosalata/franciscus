@@ -1,6 +1,12 @@
 DATA_DIR ?= ../franciscus-data
 DB_OUTPUT = app/static/franciscus.db
 
+# Corpus provenance stamped into the DB's `meta` table. Read from the data
+# repo's git state; empty (and harmless) when DATA_DIR isn't a git checkout.
+DATA_COMMIT := $(shell git -C $(DATA_DIR) rev-parse --short HEAD 2>/dev/null)
+DATA_COMMIT_DATE := $(shell git -C $(DATA_DIR) show -s --format=%cs HEAD 2>/dev/null)
+BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+
 .PHONY: all db app dev install clean
 
 all: db app
@@ -17,6 +23,9 @@ check:
 	cd app && npm run check
 
 db:
+	FRANCISCUS_DATA_COMMIT="$(DATA_COMMIT)" \
+	FRANCISCUS_DATA_COMMIT_DATE="$(DATA_COMMIT_DATE)" \
+	FRANCISCUS_BUILD_TIME="$(BUILD_TIME)" \
 	cargo run --manifest-path server/Cargo.toml -- build --data-dir $(DATA_DIR) --output $(DB_OUTPUT)
 
 app: install db

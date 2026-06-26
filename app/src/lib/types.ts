@@ -1,3 +1,15 @@
+/** Build provenance + corpus stats stamped into the DB's `meta` table by the
+ *  Rust CLI. String fields may be empty when built without git/Makefile env. */
+export interface CorpusMeta {
+	schema_version: number;
+	data_commit: string;
+	data_commit_date: string;
+	built_at: string;
+	book_count: number;
+	languages: string;
+	annotation_count: number;
+}
+
 export interface BookMeta {
 	id: string;
 	title: string;
