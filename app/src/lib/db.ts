@@ -6,8 +6,9 @@ import type { BookMeta, Chapter, Paragraph, Aside, Annotation, TopicPage, Paragr
 let db: Database | null = null;
 
 const DB_URL = '/franciscus.db';
-// Bump this when the shipped database changes so stale copies are evicted.
-const DB_CACHE = 'franciscus-db-v1.6.2';
+// No version suffix: staleness is decided by the db file's own ETag/Last-Modified
+// (see downloadDb), so a rebuilt db refreshes without bumping anything here.
+const DB_CACHE = 'franciscus-db';
 
 export interface DbProgress {
 	/** bytes received so far */
@@ -56,7 +57,31 @@ async function downloadDb(onProgress?: (p: DbProgress) => void): Promise<ArrayBu
 
 	const cached = cache ? await cache.match(DB_URL) : undefined;
 	if (cached) {
-		return readWithProgress(cached, true, onProgress);
+		const etag = cached.headers.get('etag');
+		const lastMod = cached.headers.get('last-modified');
+		// ponytail: revalidate via HTTP validators; no validators => trust cache.
+		// Covers Vite dev (Last-Modified changes on rebuild) and static hosts.
+		if (!etag && !lastMod) return readWithProgress(cached, true, onProgress);
+		try {
+			const headers: Record<string, string> = {};
+			if (etag) headers['If-None-Match'] = etag;
+			else if (lastMod) headers['If-Modified-Since'] = lastMod;
+			const res = await fetch(DB_URL, { headers });
+			if (res.status === 304 || !res.ok) {
+				return readWithProgress(cached, true, onProgress);
+			}
+			if (cache) {
+				try {
+					await cache.put(DB_URL, res.clone());
+				} catch (e) {
+					console.warn('[db] Failed to cache database', e);
+				}
+			}
+			return readWithProgress(res, false, onProgress);
+		} catch (e) {
+			// Offline or network error: serve the cached copy.
+			return readWithProgress(cached, true, onProgress);
+		}
 	}
 
 	const response = await fetch(DB_URL);
