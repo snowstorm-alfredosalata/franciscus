@@ -16,6 +16,8 @@
 					document.documentElement.classList.add('dark');
 				var lang = localStorage.getItem('franciscus-ui-lang');
 				if (lang) document.documentElement.lang = lang;
+				var scale = localStorage.getItem('franciscus-reader-scale');
+				if (scale) document.documentElement.style.setProperty('--reader-scale', scale);
 			})();
 		</script>
 		%sveltekit.head%

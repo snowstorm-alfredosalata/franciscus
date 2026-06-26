@@ -37,10 +37,20 @@ fn parse_topic_page(text: &str) -> Result<models::TopicPage, String> {
     let after_first = &text[3..];
     let end = after_first.find("---").ok_or("Missing closing --- in frontmatter")?;
     let yaml_str = &after_first[..end];
-    let body = after_first[end + 3..].trim().to_string();
+    let body = after_first[end + 3..].trim();
     let frontmatter: models::TopicPageFrontmatter =
         serde_yaml::from_str(yaml_str).map_err(|e| format!("YAML parse error: {e}"))?;
-    Ok(models::TopicPage { frontmatter, content: body })
+    Ok(models::TopicPage { frontmatter, content: render_topic_body(body) })
+}
+
+/// Topic bodies are authored as Markdown (blank-line-separated paragraphs,
+/// plus raw inline HTML like the trailing Wikipedia <a>). The app renders the
+/// result via {@html}, so convert to HTML at build time. `unsafe_` keeps the
+/// raw HTML the sources rely on instead of escaping it.
+fn render_topic_body(body: &str) -> String {
+    let mut options = comrak::Options::default();
+    options.render.unsafe_ = true;
+    comrak::markdown_to_html(body, &options).trim().to_string()
 }
 
 /// Decompose a topic-page filename stem into `(topic_type, topic_value, lang)`.

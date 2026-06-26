@@ -10,7 +10,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Manuscript palette — brand ramps authored in oklch.
-   Hues: crimson 22°, gold 83°, royal/night blue 264°, warm parchment 85°.
+   Hues: crimson 22°, gold 94° (matched to the Verbum Caro logo gold #dcc368),
+   royal/night blue 264°, warm parchment 85°.
    Every brand/text pairing used below clears WCAG AA (≥4.5:1) on its surface;
    ramp lightness was tuned against the contrast checker, do not nudge blindly.
    Display/body faces fall back to system serifs until the @fontsource packages
@@ -28,17 +29,17 @@
 	--color-crimson-900: oklch(0.355 0.118 22);
 	--color-crimson-950: oklch(0.255 0.085 22);
 
-	--color-gold-50: oklch(0.984 0.018 83);
-	--color-gold-100: oklch(0.962 0.04 83);
-	--color-gold-200: oklch(0.924 0.078 83);
-	--color-gold-300: oklch(0.878 0.11 83);
-	--color-gold-400: oklch(0.82 0.135 83);
-	--color-gold-500: oklch(0.76 0.14 83);
-	--color-gold-600: oklch(0.66 0.13 83);
-	--color-gold-700: oklch(0.545 0.11 83);
-	--color-gold-800: oklch(0.46 0.092 83);
-	--color-gold-900: oklch(0.405 0.076 83);
-	--color-gold-950: oklch(0.285 0.052 83);
+	--color-gold-50: oklch(0.984 0.018 94);
+	--color-gold-100: oklch(0.962 0.04 94);
+	--color-gold-200: oklch(0.924 0.078 94);
+	--color-gold-300: oklch(0.878 0.11 94);
+	--color-gold-400: oklch(0.82 0.135 94);
+	--color-gold-500: oklch(0.76 0.14 94);
+	--color-gold-600: oklch(0.66 0.13 94);
+	--color-gold-700: oklch(0.545 0.11 94);
+	--color-gold-800: oklch(0.46 0.092 94);
+	--color-gold-900: oklch(0.405 0.076 94);
+	--color-gold-950: oklch(0.285 0.052 94);
 
 	--color-royal-50: oklch(0.97 0.013 264);
 	--color-royal-100: oklch(0.932 0.028 264);
@@ -97,7 +98,12 @@ ref::after {
 	font-size: 0.75rem;
 	padding: 0.25rem 0.5rem;
 	border-radius: 0.25rem;
-	white-space: nowrap;
+	/* Constrain to the viewport so a ref near the right edge can't widen the
+	   page and cause horizontal scroll on mobile. ponytail: pure-CSS clamp +
+	   wrap; edge-anchoring the tooltip flush to the screen would need JS. */
+	white-space: normal;
+	width: max-content;
+	max-width: min(16rem, 90vw);
 	pointer-events: none;
 	opacity: 0;
 	transition: opacity 0.15s;
@@ -268,14 +274,80 @@ mark.search-highlight {
 	}
 	body {
 		@apply bg-background text-foreground;
+		/* Clip (not hidden, so scroll anchoring/verse deep-links keep working)
+		   any stray horizontal overflow — e.g. a wide ref tooltip near the edge. */
+		overflow-x: clip;
 	}
 	html {
 		@apply font-sans;
 	}
-	/* Capitalis-style display face for major titles (manuscript header feel). */
+	/* Capitalis-style display face for major titles (manuscript header feel),
+	   with a short gilt flourish underline drawn from the logo gold. */
 	h1,
 	h2 {
 		font-family: var(--font-display);
+	}
+	h1 {
+		padding-bottom: 0.3rem;
+		background-image: linear-gradient(
+			to right,
+			var(--color-gold-500),
+			var(--color-gold-300)
+		);
+		background-repeat: no-repeat;
+		background-position: bottom left;
+		background-size: 3.5rem 2px;
+	}
+	.dark h1 {
+		background-image: linear-gradient(
+			to right,
+			var(--color-gold-400),
+			var(--color-gold-600)
+		);
+	}
+	/* Emphasis reads as gilt rubrication rather than plain bold. */
+	strong,
+	b {
+		color: var(--color-gold-700);
+	}
+	.dark strong,
+	.dark b {
+		color: var(--color-gold-400);
+	}
+	/* Content links to the outside world (external sites + mailto) carry the
+	   brand primary colour so they stand apart from body text. External links
+	   also get a trailing ↗ marking that they leave the site / open a new tab.
+	   .no-underline opts out (e.g. the footer logo link). ponytail: ↗ glyph
+	   instead of an inline SVG icon — swap in an SVG if the glyph renders poorly. */
+	a[href^="mailto:"]:not(.no-underline),
+	a[target="_blank"]:not(.no-underline),
+	a[rel~="external"]:not(.no-underline) {
+		color: var(--primary);
+	}
+	a[target="_blank"]:not(.no-underline)::after,
+	a[rel~="external"]:not(.no-underline)::after {
+		content: "\2197";
+		display: inline-block;
+		margin-inline-start: 0.15em;
+		font-size: 0.85em;
+		vertical-align: baseline;
+	}
+	/* Manuscript divider: a hairline gold rule instead of the default gray box. */
+	hr {
+		border: 0;
+		height: 1px;
+		margin: 2rem 0;
+		background: linear-gradient(
+			to right,
+			transparent,
+			var(--color-gold-500),
+			transparent
+		);
+	}
+	/* Reader body: slightly larger base size with a user-tweakable scale knob
+	   (set on <html> by the size control; defaults to 1). */
+	.chapter-content {
+		font-size: calc(1.0625rem * var(--reader-scale, 1));
 	}
 	/* Consistent gold focus ring on all keyboard-focused interactive elements. */
 	a:focus-visible,

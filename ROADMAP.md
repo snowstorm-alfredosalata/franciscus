@@ -74,18 +74,19 @@ Status legend: `[ ]` planned | `[~]` in progress | `[x]` done
 ## Post v1.0.0
 
 ### Polish & fixes — next
-- [ ] **UI flourish.** The gold primary colour barely appears anywhere. Bring it (and secondary crimson / royal-blue accents) into title underlines and `<hr>` dividers so pages read richer and more manuscript-like.
-- [ ] **Reader layout fixes.**
+- [~] **UI flourish.** The gold primary colour barely appears anywhere. Bring it (and secondary crimson / royal-blue accents) into title underlines and `<hr>` dividers so pages read richer and more manuscript-like. Dividers might be good secondary, while `<strong>` or `<h1>` could be gold, to consider.
+Also the gold should match the Verbum Caro logo gold.
+- [x] **Reader layout fixes.**
       - The navbar overlays body text once the page is scrolled. Give it a body-matched background plus a fade-on-scroll shadow so text passes cleanly underneath.
       - Some pages scroll horizontally on mobile. Most likely cause: `<ref>` popovers overflowing the viewport — constrain them to screen width.
-- [ ] **Domain redirect.** Add a GitHub Pages `CNAME` and redirect `www.franciscus.app` to the naked domain.
-- [ ] **Typography.** Slightly larger base text, ideally a user-tweakable size control.
+- [x] **Domain redirect.** Add a GitHub Pages `CNAME` and redirect `www.franciscus.app` to the naked domain.
+- [x] **Typography.** Slightly larger base text, ideally a user-tweakable size control.
 - [ ] **Version visibility.** Surface the DB and app version somewhere in-app (footer or About page) so a reader can tell which build and corpus snapshot they're on.
 
 ### Data corrections — next
-- [ ] **Phantom topics.** AI annotation invented topic values outside the controlled vocabulary (e.g. `virtue:prayer`). Reconcile every annotation against `topics.toml`, mapping or dropping the strays.
-- [ ] **Untranslated book titles.** Titles still render in Latin under translated UIs; add their translations.
-- [ ] **English translations.** Machine-translate all sources into English (the corpus currently ships Latin + Italian).
+- [x] **Phantom topics.** AI annotation invented topic values outside the controlled vocabulary (e.g. `virtue:prayer`). Reconcile every annotation against `topics.toml`, mapping or dropping the strays.
+- [x] **Untranslated book titles.** Titles still render in Latin under translated UIs; add their translations.
+- [x] **English translations.** Machine-translate all sources into English (the corpus currently ships Latin + Italian).
 
 ### Reader features
 - [ ] **Bookmarks & reading progress.** Let readers mark passages and resume where they left off — client-side only, no account required.

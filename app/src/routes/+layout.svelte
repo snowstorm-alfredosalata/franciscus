@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { afterNavigate } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { initDb, type DbProgress } from '$lib';
 	import { resetTrail } from '$lib/trail.svelte.js';
 	import LanguagePicker from '$lib/LanguagePicker.svelte';
@@ -25,6 +26,30 @@
 	let error = $state<string | null>(null);
 	let dark = $state(false);
 	let progress = $state<DbProgress | null>(null);
+	let scrolled = $state(false);
+
+	// Reader text-size knob (only shown on the chapter reader). Scales the
+	// reader's --reader-scale CSS var; persisted and applied early in app.html.
+	const isReader = $derived($page.route.id === '/book/[book_id]/[chapter_id]');
+	let scale = $state(1);
+	$effect(() => {
+		const stored = Number(localStorage.getItem('franciscus-reader-scale'));
+		if (stored) scale = stored;
+	});
+	function setScale(next: number) {
+		scale = Math.min(1.6, Math.max(0.9, Math.round(next * 10) / 10));
+		document.documentElement.style.setProperty('--reader-scale', String(scale));
+		localStorage.setItem('franciscus-reader-scale', String(scale));
+	}
+
+	// Fade in a shadow under the fixed chrome once the page scrolls, so body
+	// text passes cleanly beneath the body-matched background band.
+	$effect(() => {
+		const onScroll = () => (scrolled = window.scrollY > 8);
+		onScroll();
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => window.removeEventListener('scroll', onScroll);
+	});
 
 	const pct = $derived(
 		progress && progress.total ? Math.round((progress.loaded / progress.total) * 100) : null
@@ -67,10 +92,40 @@
 </a>
 
 <div class="flex min-h-screen flex-col bg-background transition-colors pt-20 md:pt-24 md:pb-20">
-	<div class="fixed top-4 left-4 z-50 flex items-center gap-1">
+	<!-- Body-matched navbar over the floating chrome. On scroll it gains a soft
+	     drop shadow tinted with the page background, so body text appears to
+	     fade out as it passes underneath rather than ending at a hard edge. -->
+	<nav
+		class="fixed inset-x-0 top-0 z-50 flex py-2 items-center justify-between px-3 md:px-4 bg-background transition-shadow duration-300 {scrolled
+			? 'shadow-[0_10px_16px_4px_var(--background)]'
+			: ''}"
+	>
 		<TopNav />
-	</div>
-	<div class="fixed top-3 right-3 z-50 flex items-center gap-1">
+		<div class="flex items-center gap-1">
+			{#if ready && isReader}
+			<div class="flex items-center" role="group" aria-label={t('reader.textSize')}>
+				<Button
+					variant="ghost"
+					size="icon"
+					onclick={() => setScale(scale - 0.1)}
+					disabled={scale <= 0.9}
+					class="rounded-full pointer-coarse:size-11 text-muted-foreground hover:text-foreground hover:bg-accent"
+					aria-label={t('reader.textSmaller')}
+				>
+					<span class="text-sm font-serif">A</span>
+				</Button>
+				<Button
+					variant="ghost"
+					size="icon"
+					onclick={() => setScale(scale + 0.1)}
+					disabled={scale >= 1.6}
+					class="rounded-full pointer-coarse:size-11 text-muted-foreground hover:text-foreground hover:bg-accent"
+					aria-label={t('reader.textLarger')}
+				>
+					<span class="text-lg font-serif">A</span>
+				</Button>
+			</div>
+		{/if}
 		{#if ready}
 			<LanguagePicker />
 		{/if}
@@ -91,7 +146,8 @@
 				</svg>
 			{/if}
 		</Button>
-	</div>
+		</div>
+	</nav>
 
 	{#if error}
 		<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center">
