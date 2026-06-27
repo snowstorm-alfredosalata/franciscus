@@ -10,7 +10,6 @@
         <a href="/bookmarks" class="text-muted-foreground hover:text-primary">{t('nav.bookmarks')}</a>
         <a href="/about" class="text-muted-foreground hover:text-primary">{t('nav.about')}</a>
         <a href="/contribute" class="text-muted-foreground hover:text-primary">{t('nav.contribute')}</a>
-        <a href="/contact" class="text-muted-foreground hover:text-primary">{t('nav.contact')}</a>
     </div>
 
     <!-- Mobile: sheet drawer -->
@@ -45,11 +44,6 @@
                     <Sheet.Close>
                         {#snippet child({ props })}
                             <a href="/contribute" {...props} class="block rounded-md py-2.5 text-foreground">{t('nav.contribute')}</a>
-                        {/snippet}
-                    </Sheet.Close>
-                    <Sheet.Close>
-                        {#snippet child({ props })}
-                            <a href="/contact" {...props} class="block rounded-md py-2.5 text-foreground">{t('nav.contact')}</a>
                         {/snippet}
                     </Sheet.Close>
                 </div>
