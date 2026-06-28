@@ -11,9 +11,12 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `franciscus-cache-${version}`;
 
 // Precache the app shell and static assets. The SPA fallback (`/`) is added so
-// arbitrary routes resolve offline. The database is deliberately excluded — it
-// is large and managed separately by `db.ts` via its own Cache Storage bucket,
-// which keeps first-load progress reporting and avoids downloading it twice.
+// arbitrary routes resolve offline. The prerendered hub pages (/, /about,
+// /contribute, /topics) ride in via `prerendered`, and the tiny hub
+// `db-manifest.json` they read rides in via `files` (it lives in static/) — so
+// the hubs work offline. The database is deliberately excluded — it is large and
+// managed separately by `db.ts` via its own Cache Storage bucket, which keeps
+// first-load progress reporting and avoids downloading it twice.
 const ASSETS = [
 	'/',
 	...build,

@@ -359,6 +359,21 @@ mark.search-highlight {
 	}
 }
 
+/* Indeterminate DB-download bar: a segment sweeping across the track, shown
+   only when the server sends no Content-Length (so a real percentage is
+   unavailable). Reads as actively working rather than a stuck pulse. */
+@keyframes db-progress-indeterminate {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(450%);
+	}
+}
+.db-progress-indeterminate {
+	animation: db-progress-indeterminate 1.1s ease-in-out infinite;
+}
+
 /* Honor users who prefer reduced motion: drop transitions, animations, and
    smooth scrolling that the design otherwise applies. */
 @media (prefers-reduced-motion: reduce) {

@@ -4,7 +4,8 @@
 		"subtitle": "Franciscan Sources",
 		"loading": "Loading...",
 		"downloading": "Downloading the corpus…",
-		"dbError": "Error loading database:"
+		"dbError": "Error loading database:",
+		"noScript": "This application requires scripts to function — we do not collect <em>any</em> data from you, but scripts are required for locally browsing the sources database."
 	},
 	"nav": {
 		"sources": "Sources",

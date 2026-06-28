@@ -71,6 +71,30 @@ fn parse_topic_filename(stem: &str) -> Result<(String, String, Option<String>), 
     Ok((topic_type.to_string(), topic_value.to_string(), lang))
 }
 
+/// Build the sitemap for the prerendered hub routes. Content routes
+/// (book/chapter/topic-detail) are intentionally omitted — they are not
+/// crawlable yet (see docs/ISSUE-book-route-crawlability.md).
+fn build_sitemap() -> String {
+    const BASE: &str = "https://franciscus.app";
+    // (path, changefreq, priority)
+    let routes = [
+        ("/", "weekly", "1.0"),
+        ("/topics", "weekly", "0.8"),
+        ("/about", "monthly", "0.5"),
+        ("/contribute", "monthly", "0.5"),
+    ];
+    let mut xml = String::from(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n",
+    );
+    for (path, changefreq, priority) in routes {
+        xml.push_str(&format!(
+            "\t<url>\n\t\t<loc>{BASE}{path}</loc>\n\t\t<changefreq>{changefreq}</changefreq>\n\t\t<priority>{priority}</priority>\n\t</url>\n"
+        ));
+    }
+    xml.push_str("</urlset>\n");
+    xml
+}
+
 fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     let output_str = output.to_str().expect("Invalid output path");
 
@@ -232,6 +256,28 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
 
     db::write_meta(&conn);
     println!("  meta written (schema v{})", db::SCHEMA_VERSION);
+
+    // Hub-page manifest + sitemap, written next to the DB asset so the static
+    // hub routes can render/prerender without sql.js. Same build => no drift.
+    let asset_dir = output.parent().unwrap_or_else(|| std::path::Path::new("."));
+
+    let manifest = db::build_manifest(&conn);
+    // `db-manifest.json` (not `manifest.json`) to avoid confusion with the PWA
+    // `manifest.webmanifest` that already ships in static/.
+    let manifest_path = asset_dir.join("db-manifest.json");
+    let manifest_json =
+        serde_json::to_string_pretty(&manifest).expect("Failed to serialize manifest");
+    std::fs::write(&manifest_path, manifest_json).expect("Failed to write manifest.json");
+    println!(
+        "  manifest written: {} book(s), {} topic(s) -> {}",
+        manifest.books.len(),
+        manifest.topics.len(),
+        manifest_path.display()
+    );
+
+    let sitemap_path = asset_dir.join("sitemap.xml");
+    std::fs::write(&sitemap_path, build_sitemap()).expect("Failed to write sitemap.xml");
+    println!("  sitemap written -> {}", sitemap_path.display());
 
     println!(
         "Build complete: {} book(s), {} translation(s), {} annotation(s), {} topic page(s), {} topic translation(s) -> {}",

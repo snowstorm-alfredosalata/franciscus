@@ -1,7 +1,17 @@
 <script lang="ts">
-	import { getBooks, searchParagraphs, type BookMeta } from '$lib';
+	import { getBooks, searchParagraphs } from '$lib';
 	import { groupByChapter } from '$lib/utils';
+	import { getDbState } from '$lib/dbState';
+	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
+	import DbProgressBar from '$lib/DbProgressBar.svelte';
 	import { t, getCorpusLang } from '$lib/i18n';
+	import type { PageData } from './$types';
+
+	// Manifest comes from the root layout's load(); it prerenders the browse view
+	// (book list) with no DB. Search and book navigation activate once the DB has
+	// finished downloading in the background.
+	let { data }: { data: PageData } = $props();
+	const db = getDbState();
 
 	let inputValue = $state('');
 	let query = $state('');
@@ -15,10 +25,13 @@
 	});
 
 	const corpusLang = $derived(getCorpusLang());
-	const books: BookMeta[] = $derived(getBooks(corpusLang));
+
+	// Before the DB lands, show the manifest's canonical (Latin) book list. Once
+	// ready, upgrade to the DB so corpus-language titles localize.
+	const books = $derived(db.ready ? getBooks(corpusLang) : data.manifest.books);
 
 	const results = $derived.by(() => {
-		if (!query.trim()) return [];
+		if (!db.ready || !query.trim()) return [];
 		try {
 			return searchParagraphs(query, corpusLang);
 		} catch (e) {
@@ -29,7 +42,7 @@
 
 	const groups = $derived(groupByChapter(results));
 
-	const searching = $derived(query.trim().length > 0);
+	const searching = $derived(db.ready && query.trim().length > 0);
 
 	function resultUrl(r: { book_id: string; chapter_id: string; paragraph_id: string }): string {
 		return `/book/${r.book_id}/${r.chapter_id}?q=${encodeURIComponent(query)}#${r.paragraph_id}`;
@@ -42,17 +55,33 @@
 		<p class="text-muted-foreground mt-1">{t('app.subtitle')}</p>
 	</header>
 
-	<input
-		type="search"
-		bind:value={inputValue}
-		placeholder={t('search.placeholder')}
-		aria-label={t('search.placeholder')}
-		class="w-full px-4 py-3 rounded-lg border border-input
-		       bg-background text-foreground
-		       placeholder:text-muted-foreground
-		       focus:outline-none focus:ring-2 focus:ring-ring
-		       font-serif text-lg mb-6"
-	/>
+	<!-- Search-bar slot. Three states share this space: no-JS (the <noscript>
+	     notice, also the non-blank message for crawlers), DB still loading
+	     (download progress), and ready (the functional search input). -->
+	<div class="mb-6">
+		<NoScriptNotice />
+
+		{#if db.ready}
+			<input
+				type="search"
+				bind:value={inputValue}
+				placeholder={t('search.placeholder')}
+				aria-label={t('search.placeholder')}
+				class="w-full px-4 py-3 rounded-lg border border-input
+				       bg-background text-foreground
+				       placeholder:text-muted-foreground
+				       focus:outline-none focus:ring-2 focus:ring-ring
+				       font-serif text-lg"
+			/>
+		{:else if !db.error}
+			<!-- Rendered in the prerendered HTML so JS users see it from first paint
+			     (app loading → corpus downloading); `js-only` hides it when scripts
+			     are off, where the NoScriptNotice above explains instead. -->
+			<div class="js-only w-full px-4 py-3 rounded-lg border border-input bg-background">
+				<DbProgressBar progress={db.progress} />
+			</div>
+		{/if}
+	</div>
 
 	{#if searching}
 		<p class="text-sm text-muted-foreground mb-2">
@@ -97,7 +126,17 @@
 			<ul class="space-y-3">
 				{#each books as book}
 					<li>
-						<a href="/book/{book.id}" class="group block p-4 rounded-lg border border-border hover:border-ring transition-colors">
+						<!-- Links stay in the prerendered HTML for discovery, but click /
+						     focus are suppressed until the DB is ready (the target route
+						     needs it). -->
+						<a
+							href="/book/{book.id}"
+							aria-disabled={!db.ready}
+							tabindex={db.ready ? undefined : -1}
+							class="group block p-4 rounded-lg border border-border transition-colors {db.ready
+								? 'hover:border-ring'
+								: 'pointer-events-none opacity-60'}"
+						>
 							<strong class="font-serif text-lg text-foreground group-hover:text-primary">{book.title}</strong>
 							<span class="text-muted-foreground"> — {book.author}</span>
 							{#if book.date}

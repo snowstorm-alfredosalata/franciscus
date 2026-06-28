@@ -22,6 +22,10 @@ app/node_modules: app/package.json
 check:
 	cd app && npm run check
 
+# Writes three artifacts next to each other in app/static/: the sql.js
+# database (franciscus.db), the hub-page manifest (db-manifest.json), and the
+# hub sitemap (sitemap.xml). The manifest + sitemap are emitted from the same
+# build as the DB, so they cannot drift from it.
 db:
 	FRANCISCUS_DATA_COMMIT="$(DATA_COMMIT)" \
 	FRANCISCUS_DATA_COMMIT_DATE="$(DATA_COMMIT_DATE)" \

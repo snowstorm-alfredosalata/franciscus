@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { getAvailableCorpusLanguages } from '$lib';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import {
 		t,
@@ -10,6 +9,10 @@
 		UI_LANGUAGES
 	} from '$lib/i18n';
 
+	// Corpus translation languages come from the manifest (passed down by the
+	// root layout) so the picker works before the sql.js DB has loaded.
+	let { languages = [] }: { languages?: string[] } = $props();
+
 	const LANG_LABELS: Record<string, string> = {
 		la: 'Latina',
 		it: 'Italiano',
@@ -18,8 +21,6 @@
 		de: 'Deutsch',
 		es: 'Español'
 	};
-
-	const corpusLanguages = getAvailableCorpusLanguages();
 </script>
 
 <DropdownMenu.Root>
@@ -48,7 +49,7 @@
 				class="w-full text-sm rounded border border-input bg-background text-foreground px-2 py-1"
 			>
 				<option value="la">{t('language.original')}</option>
-				{#each corpusLanguages as lang}
+				{#each languages as lang}
 					<option value={lang}>{LANG_LABELS[lang] ?? lang}</option>
 				{/each}
 			</select>

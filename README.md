@@ -73,6 +73,12 @@ franciscus-data/        server/ (Rust CLI)        app/ (SvelteKit SPA)
 
 That's the whole architecture: free to host, fast to read, offline by default.
 
+The same build step also emits a small `db-manifest.json` (a KB-scale projection
+of the DB — corpus meta, book list, topic list) and a `sitemap.xml` next to the
+`.db`. The hub routes (`/`, `/about`, `/contribute`, `/topics`) read the manifest
+via a SvelteKit `load()`, so they are prerendered to real, crawlable HTML and
+render without downloading the database.
+
 | Component | Technology |
 |---|---|
 | Frontend | SvelteKit 2 / Svelte 5 (SPA, `adapter-static`) |

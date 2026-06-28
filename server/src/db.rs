@@ -1,5 +1,6 @@
 use rusqlite::{Connection, params};
 use regex::Regex;
+use std::collections::BTreeMap;
 use crate::models::*;
 
 /// Shape version of the DB the app expects. Bump whenever the table layout
@@ -194,6 +195,141 @@ pub fn write_meta(conn: &Connection) {
             params![k, v],
         )
         .expect("Failed to write meta row");
+    }
+}
+
+/// Build the hub-page manifest from the just-populated DB. Mirrors the stats in
+/// `write_meta` but shaped for the app's `load()` (see `models::Manifest`).
+/// Provenance comes from the same environment the Makefile sets.
+pub fn build_manifest(conn: &Connection) -> Manifest {
+    let data_commit = std::env::var("FRANCISCUS_DATA_COMMIT").unwrap_or_default();
+    let data_commit_date = std::env::var("FRANCISCUS_DATA_COMMIT_DATE").unwrap_or_default();
+    let built_at = std::env::var("FRANCISCUS_BUILD_TIME").unwrap_or_default();
+
+    let book_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM books", [], |r| r.get(0))
+        .unwrap_or(0);
+
+    let languages: Vec<String> = {
+        let mut stmt = conn
+            .prepare("SELECT DISTINCT lang FROM book_translations ORDER BY lang")
+            .expect("prepare languages");
+        let rows = stmt
+            .query_map([], |r| r.get::<_, String>(0))
+            .expect("query languages");
+        rows.filter_map(|r| r.ok()).collect()
+    };
+
+    // Translations grouped by book, so each book carries its own language list.
+    let mut translations_by_book: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT book_id, lang FROM book_translations ORDER BY book_id, lang")
+            .expect("prepare book translations");
+        let rows = stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .expect("query book translations");
+        for row in rows.filter_map(|r| r.ok()) {
+            translations_by_book.entry(row.0).or_default().push(row.1);
+        }
+    }
+
+    let books: Vec<ManifestBook> = {
+        let mut stmt = conn
+            .prepare("SELECT id, title, author, date FROM books ORDER BY id")
+            .expect("prepare books");
+        let rows = stmt
+            .query_map([], |r| {
+                Ok(ManifestBook {
+                    id: r.get(0)?,
+                    title: r.get(1)?,
+                    author: r.get(2)?,
+                    date: r.get(3)?,
+                    translations: Vec::new(),
+                })
+            })
+            .expect("query books");
+        rows.filter_map(|r| r.ok())
+            .map(|mut b| {
+                b.translations = translations_by_book.remove(&b.id).unwrap_or_default();
+                b
+            })
+            .collect()
+    };
+
+    // Localized topic URL slugs, keyed by (type, value) -> {lang: slug}.
+    let mut slugs_by_topic: std::collections::HashMap<(String, String), BTreeMap<String, String>> =
+        std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare(
+                "SELECT topic_type, topic_value, lang, lang_slug
+                 FROM topic_page_translations WHERE lang_slug IS NOT NULL",
+            )
+            .expect("prepare topic slugs");
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, String>(3)?,
+                ))
+            })
+            .expect("query topic slugs");
+        for (topic_type, topic_value, lang, slug) in rows.filter_map(|r| r.ok()) {
+            slugs_by_topic
+                .entry((topic_type, topic_value))
+                .or_default()
+                .insert(lang, slug);
+        }
+    }
+
+    let topics: Vec<ManifestTopic> = {
+        let mut stmt = conn
+            .prepare(
+                "SELECT topic_type, topic_value, COUNT(*) AS count
+                 FROM annotations
+                 GROUP BY topic_type, topic_value
+                 ORDER BY topic_type, topic_value",
+            )
+            .expect("prepare topics");
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, i64>(2)?,
+                ))
+            })
+            .expect("query topics");
+        rows.filter_map(|r| r.ok())
+            .map(|(topic_type, value, count)| {
+                let slugs = slugs_by_topic
+                    .remove(&(topic_type.clone(), value.clone()))
+                    .unwrap_or_default();
+                ManifestTopic {
+                    topic_type,
+                    value,
+                    count: count as u32,
+                    slugs,
+                }
+            })
+            .collect()
+    };
+
+    Manifest {
+        schema: MANIFEST_SCHEMA,
+        corpus: ManifestCorpus {
+            data_commit,
+            data_commit_date,
+            built_at,
+            book_count: book_count as u32,
+            languages,
+        },
+        books,
+        topics,
     }
 }
 

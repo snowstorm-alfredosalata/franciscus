@@ -6,7 +6,7 @@
 	"scripts": {
 		"db:build": "cargo run --manifest-path ../server/Cargo.toml -- build --data-dir ../../franciscus-data --output static/franciscus.db",
 		"dev": "vite dev",
-		"build": "vite build && cp build/index.html build/404.html",
+		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

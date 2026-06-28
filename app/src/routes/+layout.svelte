@@ -4,14 +4,17 @@
 	import { page } from '$app/stores';
 	import { initDb, type DbProgress } from '$lib';
 	import { resetTrail } from '$lib/trail.svelte.js';
+	import { setDbState } from '$lib/dbState';
 	import LanguagePicker from '$lib/LanguagePicker.svelte';
 	import DecorativeImage from '$lib/DecorativeImage.svelte';
 	import TopNav from '$lib/TopNav.svelte';
 	import Footer from '$lib/Footer.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { t, getUiLang } from '$lib/i18n';
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
 
-	let { children } = $props();
+	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
 	// Hubs are entry points, not waypoints: landing on one clears the breadcrumb
 	// trail so the menu acts as a fresh start. Content pages (book / chapter /
@@ -27,6 +30,20 @@
 	let dark = $state(false);
 	let progress = $state<DbProgress | null>(null);
 	let scrolled = $state(false);
+
+	// Publish the background-DB state to DB-gated routes (book / topic-detail)
+	// and the hub chrome. Getters keep consumers reactive to the $state above.
+	setDbState({
+		get ready() {
+			return ready;
+		},
+		get error() {
+			return error;
+		},
+		get progress() {
+			return progress;
+		}
+	});
 
 	// Reader text-size knob (only shown on the chapter reader). Scales the
 	// reader's --reader-scale CSS var; persisted and applied early in app.html.
@@ -50,10 +67,6 @@
 		window.addEventListener('scroll', onScroll, { passive: true });
 		return () => window.removeEventListener('scroll', onScroll);
 	});
-
-	const pct = $derived(
-		progress && progress.total ? Math.round((progress.loaded / progress.total) * 100) : null
-	);
 
 	$effect(() => {
 		dark = document.documentElement.classList.contains('dark');
@@ -126,9 +139,23 @@
 				</Button>
 			</div>
 		{/if}
-		{#if ready}
-			<LanguagePicker />
+		{#if !ready && !error}
+			<!-- Circular indicator: the corpus DB is still loading/downloading in
+			     the background; hub pages stay usable while it lands. Rendered in
+			     the prerendered HTML (visible from first paint for JS users) but
+			     `js-only`, so no-JS visitors don't see a perpetual spinner. -->
+			<span
+				role="status"
+				aria-label={progress && !progress.cached ? t('app.downloading') : t('app.loading')}
+				class="js-only inline-flex size-9 items-center justify-center text-muted-foreground"
+			>
+				<svg class="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" />
+					<path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-3a7 7 0 0 0-7-7V2z" />
+				</svg>
+			</span>
 		{/if}
+		<LanguagePicker languages={data.manifest.corpus.languages} />
 		<Button
 			variant="ghost"
 			size="icon"
@@ -149,34 +176,10 @@
 		</div>
 	</nav>
 
-	{#if error}
-		<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center">
-			<p class="text-destructive">{t('app.dbError')} {error}</p>
-		</main>
-	{:else if !ready}
-		<main id="main-content" tabindex="-1" class="min-h-screen flex items-center justify-center px-6">
-			<div class="w-full max-w-xs text-center">
-				<p class="text-muted-foreground mb-3">
-					{progress?.cached ? t('app.loading') : t('app.downloading')}
-				</p>
-				<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-					{#if pct !== null}
-						<div
-							class="h-full rounded-full bg-primary transition-[width] duration-150"
-							style="width: {pct}%"
-						></div>
-					{:else}
-						<div class="h-full w-1/3 animate-pulse rounded-full bg-primary"></div>
-					{/if}
-				</div>
-				{#if pct !== null}
-					<p class="mt-2 text-xs tabular-nums text-muted-foreground">{pct}%</p>
-				{/if}
-			</div>
-		</main>
-	{:else}
-		{@render children()}
-	{/if}
+	<!-- The root layout no longer gates on the DB: hubs render from the manifest
+	     immediately. DB-dependent routes (book / topic-detail) wrap themselves in
+	     DbGate (their nested +layout) to show the loading/progress screen. -->
+	{@render children()}
 	<DecorativeImage />
 	<Footer {dark} />
 </div>

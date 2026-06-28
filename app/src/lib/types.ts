@@ -1,15 +1,3 @@
-/** Build provenance + corpus stats stamped into the DB's `meta` table by the
- *  Rust CLI. String fields may be empty when built without git/Makefile env. */
-export interface CorpusMeta {
-	schema_version: number;
-	data_commit: string;
-	data_commit_date: string;
-	built_at: string;
-	book_count: number;
-	languages: string;
-	annotation_count: number;
-}
-
 export interface BookMeta {
 	id: string;
 	title: string;
@@ -90,6 +78,42 @@ export interface AsideTranslation {
 	aside_id: string;
 	lang: string;
 	content: string;
+}
+
+/** Build-time projection of the DB the hub pages render from, fetched via a
+ *  SvelteKit `load()` so it works in both Node (prerender) and the browser.
+ *  Emitted by the Rust CLI to `static/db-manifest.json`; mirror of
+ *  `server/src/models.rs` `Manifest` — keep the two in sync manually. */
+export interface Manifest {
+	schema: number;
+	corpus: ManifestCorpus;
+	books: ManifestBook[];
+	topics: ManifestTopic[];
+}
+
+export interface ManifestCorpus {
+	data_commit: string;
+	data_commit_date: string;
+	built_at: string;
+	book_count: number;
+	/** Corpus translation languages (Latin source is implicit, not listed). */
+	languages: string[];
+}
+
+export interface ManifestBook {
+	id: string;
+	title: string;
+	author: string;
+	date: string | null;
+	translations: string[];
+}
+
+export interface ManifestTopic {
+	type: string;
+	value: string;
+	count: number;
+	/** Localized URL slug per UI language, when registered. */
+	slugs: Record<string, string>;
 }
 
 export interface SearchResult {

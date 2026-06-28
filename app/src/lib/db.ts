@@ -1,7 +1,7 @@
 // @ts-ignore — fts5-sql-bundle's sql-wasm.js has no type declarations
 import initSqlJs from 'fts5-sql-bundle/dist/sql-wasm.js';
 import type { Database, BindParams } from 'sql.js';
-import type { BookMeta, Chapter, Paragraph, Aside, Annotation, TopicPage, ParagraphTranslation, AsideTranslation, SearchResult, CorpusMeta } from './types';
+import type { BookMeta, Chapter, Paragraph, Aside, Annotation, TopicPage, ParagraphTranslation, AsideTranslation, SearchResult } from './types';
 
 let db: Database | null = null;
 
@@ -163,29 +163,6 @@ function queryOne<T>(sql: string, params: BindParams = {}): T | null {
 	return results[0] ?? null;
 }
 
-/** Read the `meta` key/value table into a typed object. Returns null if the
- *  table is absent (e.g. a DB built before versioning landed). */
-export function getMeta(): CorpusMeta | null {
-	let rows: { key: string; value: string }[];
-	try {
-		rows = queryAll<{ key: string; value: string }>('SELECT key, value FROM meta');
-	} catch {
-		return null;
-	}
-	if (rows.length === 0) return null;
-	const m = new Map(rows.map((r) => [r.key, r.value]));
-	const num = (k: string) => Number(m.get(k) ?? '0') || 0;
-	return {
-		schema_version: num('schema_version'),
-		data_commit: m.get('data_commit') ?? '',
-		data_commit_date: m.get('data_commit_date') ?? '',
-		built_at: m.get('built_at') ?? '',
-		book_count: num('book_count'),
-		languages: m.get('languages') ?? '',
-		annotation_count: num('annotation_count')
-	};
-}
-
 export function getBooks(lang: string = 'la'): BookMeta[] {
 	return queryAll<BookMeta>(
 		`SELECT b.id,
@@ -342,29 +319,6 @@ export function getTopicOccurrences(
 	);
 }
 
-export interface TopicSummary {
-	topic_type: string;
-	topic_value: string;
-	count: number;
-	has_page: number;
-	/** lang_slug registered for `uiLang`, when one exists. */
-	lang_slug: string | null;
-}
-
-export function getDistinctTopics(uiLang: string = 'en'): TopicSummary[] {
-	return queryAll<TopicSummary>(
-		`SELECT a.topic_type, a.topic_value, COUNT(*) AS count,
-		        EXISTS(SELECT 1 FROM topic_pages ap WHERE ap.topic_type = a.topic_type AND ap.topic_value = a.topic_value) AS has_page,
-		        tt.lang_slug AS lang_slug
-		 FROM annotations a
-		 LEFT JOIN topic_page_translations tt
-		        ON tt.topic_type = a.topic_type AND tt.topic_value = a.topic_value AND tt.lang = $uiLang
-		 GROUP BY a.topic_type, a.topic_value
-		 ORDER BY a.topic_type, a.topic_value`,
-		{ $uiLang: uiLang }
-	);
-}
-
 /**
  * Bulk-fetch the UI-lang lang_slug for every annotated topic, keyed by
  * `${topic_type}:${topic_value}`. Used by surfaces that render topic pills
@@ -381,17 +335,6 @@ export function getTopicLangSlugs(uiLang: string): Map<string, string> {
 	const map = new Map<string, string>();
 	for (const r of rows) map.set(`${r.topic_type}:${r.topic_value}`, r.lang_slug);
 	return map;
-}
-
-export interface AvailableLanguage {
-	lang: string;
-}
-
-export function getAvailableCorpusLanguages(): string[] {
-	const rows = queryAll<AvailableLanguage>(
-		'SELECT DISTINCT lang FROM paragraph_translations ORDER BY lang'
-	);
-	return rows.map((r) => r.lang);
 }
 
 export function getParagraphTranslations(

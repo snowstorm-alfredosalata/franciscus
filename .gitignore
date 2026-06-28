@@ -9,5 +9,7 @@ app/build/
 
 # Build artifacts
 *.db
+app/static/db-manifest.json
+app/static/sitemap.xml
 app/static/sql-wasm.wasm
 CLAUDE.md

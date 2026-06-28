@@ -1,17 +1,33 @@
 <script lang="ts">
-	import { getDistinctTopics, type TopicSummary } from '$lib';
 	import { topicColors } from '$lib/topicColors';
+	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
+	import { getDbState } from '$lib/dbState';
 	import { t, getUiLang } from '$lib/i18n';
+	import type { PageData } from './$types';
 
+	// Topic list comes from the manifest (root layout load), so this hub renders
+	// and prerenders without the sql.js DB.
+	let { data }: { data: PageData } = $props();
 	const uiLang = $derived(getUiLang());
-	const topics = $derived(getDistinctTopics(uiLang));
+
+	// Topic-detail pages read occurrences from the sql.js DB, so their links are
+	// inert until the background download finishes (permanently so with no JS).
+	const db = getDbState();
+
+	type TopicEntry = { topic_type: string; topic_value: string; count: number; lang_slug: string | null };
 
 	const grouped = $derived.by(() => {
-		const map = new Map<string, TopicSummary[]>();
-		for (const a of topics) {
-			const list = map.get(a.topic_type) ?? [];
-			list.push(a);
-			map.set(a.topic_type, list);
+		const map = new Map<string, TopicEntry[]>();
+		for (const tpc of data.manifest.topics) {
+			const entry: TopicEntry = {
+				topic_type: tpc.type,
+				topic_value: tpc.value,
+				count: tpc.count,
+				lang_slug: tpc.slugs[uiLang] ?? null
+			};
+			const list = map.get(entry.topic_type) ?? [];
+			list.push(entry);
+			map.set(entry.topic_type, list);
 		}
 		return map;
 	});
@@ -25,6 +41,8 @@
 		{t('topics.description')}
 	</p>
 
+	<NoScriptNotice />
+
 	{#each typeOrder as topicType}
 		{@const items = grouped.get(topicType)}
 		{#if items && items.length > 0}
@@ -36,7 +54,11 @@
 					{#each items as topic}
 						<a
 							href="/topics/{topic.topic_type}/{topic.topic_value}"
-							class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full transition-colors {topicColors(topic.topic_type, true)}"
+							aria-disabled={!db.ready}
+							tabindex={db.ready ? undefined : -1}
+							class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full transition-colors {topicColors(topic.topic_type, true)} {db.ready
+								? ''
+								: 'pointer-events-none opacity-60'}"
 						>
 							{(topic.lang_slug ?? topic.topic_value).replaceAll('_', ' ')}
 							<span class="text-xs opacity-60">({topic.count})</span>

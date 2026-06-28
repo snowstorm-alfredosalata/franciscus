@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookMeta {
@@ -88,4 +89,55 @@ pub struct TopicPageFrontmatter {
 pub struct TopicPage {
     pub frontmatter: TopicPageFrontmatter,
     pub content: String,
+}
+
+// --- Build-time manifest (app/static/db-manifest.json) ---
+//
+// A tiny projection of the DB the hub pages need so they can render (and
+// prerender) without the 12 MB sql.js database: corpus meta, the book list,
+// and the annotated-topic list. Emitted by the CLI next to `franciscus.db` in
+// the same build, so the two cannot drift. The app mirrors these shapes in
+// `app/src/lib/types.ts`; keep them in sync manually (no codegen).
+
+/// Bump when the manifest layout changes incompatibly (the app may gate on it).
+pub const MANIFEST_SCHEMA: u32 = 1;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Manifest {
+    pub schema: u32,
+    pub corpus: ManifestCorpus,
+    pub books: Vec<ManifestBook>,
+    pub topics: Vec<ManifestTopic>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ManifestCorpus {
+    pub data_commit: String,
+    pub data_commit_date: String,
+    pub built_at: String,
+    pub book_count: u32,
+    /// Corpus translation languages (e.g. `["it"]`); the canonical Latin source
+    /// is always present and not listed here.
+    pub languages: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ManifestBook {
+    pub id: String,
+    pub title: String,
+    pub author: String,
+    pub date: Option<String>,
+    /// Languages this book has a translation in.
+    pub translations: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ManifestTopic {
+    #[serde(rename = "type")]
+    pub topic_type: String,
+    pub value: String,
+    pub count: u32,
+    /// Localized URL slug per UI language, when one is registered. Includes
+    /// every language so the client can switch UI language without the DB.
+    pub slugs: BTreeMap<String, String>,
 }

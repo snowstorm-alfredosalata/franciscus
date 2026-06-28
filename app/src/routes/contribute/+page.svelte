@@ -1,21 +1,20 @@
 <script lang="ts">
     import { t } from '$lib/i18n';
-    import { getMeta } from '$lib';
+    import type { PageData } from './$types';
 
-    // The DB is already loaded by the time any route renders (the layout gates
-    // children on it), so reading the corpus meta here is safe and synchronous.
-    const meta = getMeta();
+    // Corpus provenance comes from the manifest (root layout load), so this hub
+    // renders and prerenders without the sql.js DB.
+    let { data }: { data: PageData } = $props();
+    const corpus = $derived(data.manifest.corpus);
     const appLabel = `${__APP_VERSION__}${__APP_COMMIT__ ? ` (${__APP_COMMIT__})` : ''}`;
     // $derived so the localized "texts" label tracks the active UI language.
     const corpusParts = $derived(
-        meta
-            ? [
-                  meta.data_commit,
-                  meta.data_commit_date,
-                  meta.book_count ? `${meta.book_count} ${t('pages.contribute.versionBooks')}` : '',
-                  meta.languages
-              ].filter(Boolean)
-            : []
+        [
+            corpus.data_commit,
+            corpus.data_commit_date,
+            corpus.book_count ? `${corpus.book_count} ${t('pages.contribute.versionBooks')}` : '',
+            corpus.languages.join(', ')
+        ].filter(Boolean)
     );
 </script>
 
@@ -60,10 +59,10 @@
                     <dd>{corpusParts.join(' · ')}</dd>
                 </div>
             {/if}
-            {#if meta?.built_at}
+            {#if corpus.built_at}
                 <div class="flex gap-2">
                     <dt class="font-medium text-foreground">{t('pages.contribute.versionBuilt')}</dt>
-                    <dd>{meta.built_at}</dd>
+                    <dd>{corpus.built_at}</dd>
                 </div>
             {/if}
         </dl>

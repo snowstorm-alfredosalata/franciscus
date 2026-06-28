@@ -31,8 +31,11 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
+			// SPA fallback for the non-prerendered (client-only) routes. It must
+			// NOT be `index.html`, or it would overwrite the prerendered home page;
+			// GitHub Pages serves `404.html` for unknown paths, which boots the SPA.
 			adapter: adapter({
-				fallback: 'index.html'
+				fallback: '404.html'
 			})
 		})
 	]
