@@ -40,14 +40,13 @@ fn parse_topic_page(text: &str) -> Result<models::TopicPage, String> {
     let body = after_first[end + 3..].trim();
     let frontmatter: models::TopicPageFrontmatter =
         serde_yaml::from_str(yaml_str).map_err(|e| format!("YAML parse error: {e}"))?;
-    Ok(models::TopicPage { frontmatter, content: render_topic_body(body) })
+    Ok(models::TopicPage { frontmatter, content: render_markdown(body) })
 }
 
-/// Topic bodies are authored as Markdown (blank-line-separated paragraphs,
-/// plus raw inline HTML like the trailing Wikipedia <a>). The app renders the
-/// result via {@html}, so convert to HTML at build time. `unsafe_` keeps the
-/// raw HTML the sources rely on instead of escaping it.
-fn render_topic_body(body: &str) -> String {
+/// Render authored Markdown to HTML at build time (topic bodies, book
+/// descriptions), since the app injects the result via {@html}. `unsafe_` keeps
+/// the raw inline HTML the trusted sources rely on instead of escaping it.
+pub(crate) fn render_markdown(body: &str) -> String {
     let mut options = comrak::Options::default();
     options.render.r#unsafe = true;
     comrak::markdown_to_html(body, &options).trim().to_string()
@@ -68,22 +67,25 @@ fn parse_topic_filename(stem: &str) -> Result<(String, Option<String>), String> 
     Ok((topic_value.to_string(), lang))
 }
 
-/// Build the sitemap for the prerendered hub routes. Content routes
-/// (book/chapter/topic-detail) are intentionally omitted — they are not
-/// crawlable yet (see docs/ISSUE-book-route-crawlability.md).
-fn build_sitemap() -> String {
+/// Build the sitemap for the prerendered routes: the static hubs plus each
+/// `/book/<id>` index (now prerendered from the manifest). Chapter and
+/// topic-detail routes stay out — they render client-side from sql.js.
+fn build_sitemap(book_ids: &[String]) -> String {
     const BASE: &str = "https://franciscus.app";
     // (path, changefreq, priority)
-    let routes = [
-        ("/", "weekly", "1.0"),
-        ("/topics", "weekly", "0.8"),
-        ("/about", "monthly", "0.5"),
-        ("/contribute", "monthly", "0.5"),
+    let mut routes: Vec<(String, &str, &str)> = vec![
+        ("/".into(), "weekly", "1.0"),
+        ("/topics".into(), "weekly", "0.8"),
+        ("/about".into(), "monthly", "0.5"),
+        ("/contribute".into(), "monthly", "0.5"),
     ];
+    for id in book_ids {
+        routes.push((format!("/book/{id}"), "weekly", "0.7"));
+    }
     let mut xml = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n",
     );
-    for (path, changefreq, priority) in routes {
+    for (path, changefreq, priority) in &routes {
         xml.push_str(&format!(
             "\t<url>\n\t\t<loc>{BASE}{path}</loc>\n\t\t<changefreq>{changefreq}</changefreq>\n\t\t<priority>{priority}</priority>\n\t</url>\n"
         ));
@@ -262,8 +264,9 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
         manifest_path.display()
     );
 
+    let book_ids: Vec<String> = manifest.books.iter().map(|b| b.id.clone()).collect();
     let sitemap_path = asset_dir.join("sitemap.xml");
-    std::fs::write(&sitemap_path, build_sitemap()).expect("Failed to write sitemap.xml");
+    std::fs::write(&sitemap_path, build_sitemap(&book_ids)).expect("Failed to write sitemap.xml");
     println!("  sitemap written -> {}", sitemap_path.display());
 
     println!(

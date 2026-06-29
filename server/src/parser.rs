@@ -39,50 +39,16 @@ fn parse_frontmatter(input: &str) -> Result<(BookMeta, &str), String> {
 }
 
 fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
-    let mut title = None;
-    let mut author = None;
-    let mut date = None;
-    let mut reference_edition = None;
-    let mut description_short = None;
-    let mut translator = None;
-    let mut provenance = None;
-    let mut status = None;
-
-    for line in yaml.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        if let Some((key, val)) = line.split_once(':') {
-            let key = key.trim();
-            let val = val.trim().trim_matches('"');
-            match key {
-                "title" => title = Some(val.to_string()),
-                "author" => author = Some(val.to_string()),
-                "date" => date = Some(val.trim().to_string()),
-                "reference_edition" => reference_edition = Some(val.to_string()),
-                // Empty (bare `key:`) stays None; only a non-empty value is stored.
-                "description_short" if !val.is_empty() => description_short = Some(val.to_string()),
-                "translator" => translator = Some(val.to_string()),
-                "provenance" => provenance = Some(val.to_string()),
-                "status" => status = Some(val.to_string()),
-                _ => {}
-            }
-        }
-    }
-
-    Ok(BookMeta {
-        // Set from the filename by the caller.
-        id: String::new(),
-        title: title.ok_or("Missing 'title' in frontmatter")?,
-        author: author.ok_or("Missing 'author' in frontmatter")?,
-        date,
-        reference_edition,
-        description_short,
-        translator,
-        provenance,
-        status,
-    })
+    let mut meta: BookMeta =
+        serde_yaml::from_str(yaml).map_err(|e| format!("Invalid frontmatter: {e}"))?;
+    // serde_yaml keeps the trailing newline a folded `>` scalar produces; trim it.
+    let trim = |s: Option<String>| s.map(|v| v.trim().to_string()).filter(|v| !v.is_empty());
+    meta.description_short = trim(meta.description_short);
+    meta.notes = trim(meta.notes);
+    // The long description is authored as Markdown and injected via {@html}, so
+    // render it to HTML now (paragraph breaks survive, unlike a single <p>).
+    meta.description = trim(meta.description).map(|d| crate::render_markdown(&d));
+    Ok(meta)
 }
 
 /// Extract `(id, label, provenance, by)` from a `<p>` tag's attribute string.
@@ -251,5 +217,22 @@ mod tests {
 
         let without = "title: T\nauthor: A\ndescription_short:\n";
         assert_eq!(parse_yaml_frontmatter(without).unwrap().description_short, None);
+    }
+
+    #[test]
+    fn renders_description_markdown_to_html() {
+        // Folded `>` joins wrapped lines into one paragraph.
+        let folded = "title: T\nauthor: A\ndescription: >\n    First line\n    second line.\n";
+        assert_eq!(
+            parse_yaml_frontmatter(folded).unwrap().description.as_deref(),
+            Some("<p>First line second line.</p>")
+        );
+
+        // Literal `|` keeps the blank line, so Markdown yields two paragraphs.
+        let literal = "title: T\nauthor: A\ndescription: |\n    One.\n\n    Two.\n";
+        assert_eq!(
+            parse_yaml_frontmatter(literal).unwrap().description.as_deref(),
+            Some("<p>One.</p>\n<p>Two.</p>")
+        );
     }
 }

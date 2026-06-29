@@ -24,7 +24,9 @@ pub fn create_tables(conn: &Connection) {
             author          TEXT NOT NULL,
             date            TEXT,
             ref_edition     TEXT,
-            description_short TEXT
+            description_short TEXT,
+            description     TEXT,
+            notes           TEXT
         );
 
         CREATE TABLE IF NOT EXISTS chapters (
@@ -116,6 +118,8 @@ pub fn create_tables(conn: &Connection) {
             lang     TEXT NOT NULL,
             title    TEXT NOT NULL,
             description_short TEXT,
+            description TEXT,
+            notes    TEXT,
             PRIMARY KEY (book_id, lang),
             FOREIGN KEY (book_id) REFERENCES books(id)
         );
@@ -232,9 +236,30 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
         }
     }
 
+    // Source-language chapters per book, in reading order — the prerendered
+    // table of contents on `/book/<id>`.
+    let mut chapters_by_book: std::collections::HashMap<String, Vec<ManifestChapter>> =
+        std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT book_id, id, title FROM chapters ORDER BY book_id, position")
+            .expect("prepare chapters");
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((r.get::<_, String>(0)?, ManifestChapter { id: r.get(1)?, title: r.get(2)? }))
+            })
+            .expect("query chapters");
+        for (book_id, ch) in rows.filter_map(|r| r.ok()) {
+            chapters_by_book.entry(book_id).or_default().push(ch);
+        }
+    }
+
     let books: Vec<ManifestBook> = {
         let mut stmt = conn
-            .prepare("SELECT id, title, author, date, description_short FROM books ORDER BY id")
+            .prepare(
+                "SELECT id, title, author, date, ref_edition, description_short, description, notes
+                 FROM books ORDER BY id",
+            )
             .expect("prepare books");
         let rows = stmt
             .query_map([], |r| {
@@ -243,13 +268,18 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
                     title: r.get(1)?,
                     author: r.get(2)?,
                     date: r.get(3)?,
-                    description_short: r.get(4)?,
+                    reference_edition: r.get(4)?,
+                    description_short: r.get(5)?,
+                    description: r.get(6)?,
+                    notes: r.get(7)?,
+                    chapters: Vec::new(),
                     translations: Vec::new(),
                 })
             })
             .expect("query books");
         rows.filter_map(|r| r.ok())
             .map(|mut b| {
+                b.chapters = chapters_by_book.remove(&b.id).unwrap_or_default();
                 b.translations = translations_by_book.remove(&b.id).unwrap_or_default();
                 b
             })
@@ -352,9 +382,9 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
 pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     let m = &book.meta;
     conn.execute(
-        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, description_short)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![m.id, m.title, m.author, m.date, m.reference_edition, m.description_short],
+        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, description_short, description, notes)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+        params![m.id, m.title, m.author, m.date, m.reference_edition, m.description_short, m.description, m.notes],
     )
     .expect("Failed to insert book");
 
@@ -430,9 +460,9 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
     // ## headings. The source book row already exists (translation files are
     // ingested after sources), so the FK is satisfied.
     conn.execute(
-        "INSERT OR REPLACE INTO book_translations (book_id, lang, title, description_short)
-         VALUES (?1, ?2, ?3, ?4)",
-        params![book_id, lang, book.meta.title, book.meta.description_short],
+        "INSERT OR REPLACE INTO book_translations (book_id, lang, title, description_short, description, notes)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![book_id, lang, book.meta.title, book.meta.description_short, book.meta.description, book.meta.notes],
     )
     .expect("Failed to insert book translation");
 

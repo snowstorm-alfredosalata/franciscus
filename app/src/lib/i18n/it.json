@@ -30,6 +30,7 @@
 	"book": {
 		"notFound": "Libro non trovato.",
 		"chaptersHeading": "Capitoli",
+		"notesHeading": "Note",
 		"continueReading": "Continua a leggere"
 	},
 	"chapter": {

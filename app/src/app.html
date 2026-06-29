@@ -18,8 +18,9 @@
 		<meta name="apple-mobile-web-app-title" content="Franciscus" />
 		<meta name="mobile-web-app-capable" content="yes" />
 
-		<!-- Primary SEO -->
-		<title>Franciscus — Franciscan Sources</title>
+		<!-- Primary SEO. The default <title> lives in the root +layout.svelte so
+		     pages (e.g. /book/<id>) can override it via <svelte:head>; Svelte keeps
+		     a single <title>, which a literal tag here would not. -->
 		<meta
 			name="description"
 			content="A digital portal to the Franciscan sources: the medieval Latin lives of Saint Francis of Assisi, with translations, annotations, cross-references, and full-text search."

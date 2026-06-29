@@ -4,8 +4,13 @@ export interface BookMeta {
 	author: string;
 	date: string | null;
 	ref_edition: string | null;
-	/** One-line description (localized); stored, not yet surfaced in the UI. */
+	/** One-line description (localized); shown on the home book list. */
 	description_short: string | null;
+	/** Long description (localized), authored as Markdown and stored as rendered
+	 *  HTML — inject with {@html}, do not text-render. */
+	description: string | null;
+	/** Free-text editorial note (localized); shown on the book page. */
+	notes: string | null;
 }
 
 export interface Chapter {
@@ -102,9 +107,19 @@ export interface ManifestBook {
 	title: string;
 	author: string;
 	date: string | null;
-	/** Source-language one-line description; stored, not yet surfaced. */
+	reference_edition: string | null;
+	/** Source-language descriptions/notes; localized variants come from the DB. */
 	description_short: string | null;
+	description: string | null;
+	notes: string | null;
+	/** Source-language chapter list (reading order), for the prerendered TOC. */
+	chapters: ManifestChapter[];
 	translations: string[];
+}
+
+export interface ManifestChapter {
+	id: string;
+	title: string;
 }
 
 export interface ManifestTopic {

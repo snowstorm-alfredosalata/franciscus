@@ -1,71 +1,92 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { getBook, getChapters, type BookMeta, type Chapter } from '$lib';
+	import { getBook, getChapters } from '$lib';
+	import { getDbState } from '$lib/dbState';
 	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
 	import { recordPage } from '$lib/trail.svelte.js';
 	import { getProgress } from '$lib/progress.svelte.js';
 	import { t, getCorpusLang } from '$lib/i18n';
+	import type { PageData } from './$types';
 
-	const bookId = $derived($page.params.book_id ?? '');
+	let { data }: { data: PageData } = $props();
+	const db = getDbState();
+
+	const bookId = $derived(data.book.id);
 	const corpusLang = $derived(getCorpusLang());
-	const book = $derived(getBook(bookId, corpusLang));
-	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
-	const resume = $derived(getProgress(bookId));
+
+	// The manifest (source/Latin) renders immediately and prerenders; once the DB
+	// is ready, swap to the corpus-language metadata and chapter titles.
+	const localized = $derived(db.ready ? getBook(bookId, corpusLang) : null);
+	const book = $derived(localized ?? data.book);
+	const chapters = $derived(db.ready ? getChapters(bookId, corpusLang) : data.chapters);
+	const resume = $derived(db.ready ? getProgress(bookId) : null);
 
 	$effect(() => {
-		if (!book) return;
 		recordPage([{ id: `/book/${bookId}`, label: book.title, href: `/book/${bookId}` }]);
 	});
 
 	const meta = $derived(
-		book
-			? [
-					book.author,
-					book.date ? `(${book.date})` : '',
-					book.ref_edition ? `— ${book.ref_edition}` : ''
-				]
-					.filter(Boolean)
-					.join(' ')
-			: ''
+		[
+			book.author,
+			book.date ? `(${book.date})` : '',
+			book.ref_edition ? `— ${book.ref_edition}` : ''
+		]
+			.filter(Boolean)
+			.join(' ')
 	);
 </script>
 
-{#if book}
-	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
-		<Breadcrumbs />
+<svelte:head>
+	<title>{book.title} — {book.author} · Franciscus</title>
+</svelte:head>
 
-		<header class="mb-8">
-			<h1 class="text-2xl font-display font-bold text-foreground">{book.title}</h1>
-			<p class="text-muted-foreground mt-1">{meta}</p>
-		</header>
+<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
+	<Breadcrumbs />
 
-		{#if resume}
-			<a
-				href={resume.href}
-				class="block mb-6 p-3 rounded-lg border border-ring bg-accent/40 text-foreground hover:text-primary transition-colors"
-			>
-				{t('book.continueReading')}: {resume.label}
-			</a>
+	<header class="mb-8">
+		<h1 class="text-2xl font-display font-bold text-foreground">{book.title}</h1>
+		<p class="text-muted-foreground mt-1">{meta}</p>
+		{#if book.description}
+			<!-- Rendered to HTML at build time (Markdown); see server render_markdown. -->
+			<div class="prose prose-stone dark:prose-invert max-w-none mt-4 font-serif leading-relaxed text-foreground">
+				{@html book.description}
+			</div>
 		{/if}
+		{#if book.notes}
+			<section class="mt-4">
+				<h2 class="text-sm font-display text-muted-foreground uppercase tracking-wide">
+					{t('book.notesHeading')}
+				</h2>
+				<p class="mt-1 text-sm text-muted-foreground font-serif">{book.notes}</p>
+			</section>
+		{/if}
+	</header>
 
-		<section>
-			<h2 class="text-lg font-display text-foreground mb-3">{t('book.chaptersHeading')}</h2>
-			<ul class="space-y-2">
-				{#each chapters as ch}
-					<li>
-						<a
-							href="/book/{bookId}/{ch.id}"
-							class="block p-3 rounded-lg border border-border hover:border-ring transition-colors text-foreground hover:text-primary"
-						>
-							{ch.title}
-						</a>
-					</li>
-				{/each}
-			</ul>
-		</section>
-	</main>
-{:else}
-	<main id="main-content" tabindex="-1" class="max-w-3xl mx-auto px-4 py-8">
-		<p class="text-muted-foreground">{t('book.notFound')}</p>
-	</main>
-{/if}
+	{#if resume}
+		<a
+			href={resume.href}
+			class="block mb-6 p-3 rounded-lg border border-ring bg-accent/40 text-foreground hover:text-primary transition-colors"
+		>
+			{t('book.continueReading')}: {resume.label}
+		</a>
+	{/if}
+
+	<section>
+		<h2 class="text-lg font-display text-foreground mb-3">{t('book.chaptersHeading')}</h2>
+		<ul class="space-y-2">
+			{#each chapters as ch}
+				<li>
+					<a
+						href="/book/{bookId}/{ch.id}"
+						aria-disabled={!db.ready}
+						tabindex={db.ready ? undefined : -1}
+						class="block p-3 rounded-lg border border-border transition-colors text-foreground {db.ready
+							? 'hover:border-ring hover:text-primary'
+							: 'pointer-events-none opacity-60'}"
+					>
+						{ch.title}
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</section>
+</main>

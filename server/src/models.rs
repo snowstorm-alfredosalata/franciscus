@@ -1,20 +1,37 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+// Deserialized straight from the YAML frontmatter via serde_yaml, so block
+// scalars (`description: >`), quoting, and bare `key:` → null all work. `id`
+// and any absent optional come from `#[serde(default)]`; `id` is then set from
+// the filename by the parser.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookMeta {
     /// Derived from the filename, not the frontmatter.
+    #[serde(default)]
     pub id: String,
     pub title: String,
     pub author: String,
+    #[serde(default)]
     pub date: Option<String>,
+    #[serde(default)]
     pub reference_edition: Option<String>,
-    /// One-line description; localized in translation files. Stored, not yet
-    /// surfaced in the UI.
+    /// One-line description; localized in translation files. Surfaced on the home
+    /// book list.
+    #[serde(default)]
     pub description_short: Option<String>,
+    /// Long description; localized. Surfaced on the book page.
+    #[serde(default)]
+    pub description: Option<String>,
+    /// Free-text editorial note; localized. Surfaced on the book page.
+    #[serde(default)]
+    pub notes: Option<String>,
     // Translation-only frontmatter; None on source `<id>.md` files.
+    #[serde(default)]
     pub translator: Option<String>,
+    #[serde(default)]
     pub provenance: Option<String>,
+    #[serde(default)]
     pub status: Option<String>,
 }
 
@@ -130,10 +147,23 @@ pub struct ManifestBook {
     pub title: String,
     pub author: String,
     pub date: Option<String>,
-    /// Source-language one-line description (see `BookMeta::description_short`).
+    pub reference_edition: Option<String>,
+    /// Source-language descriptions/notes (see `BookMeta`). Localized variants
+    /// come from the DB once it loads; the manifest carries source for prerender.
     pub description_short: Option<String>,
+    pub description: Option<String>,
+    pub notes: Option<String>,
+    /// Source-language chapter list, in reading order, so `/book/<id>` can
+    /// prerender its table of contents without the sql.js DB.
+    pub chapters: Vec<ManifestChapter>,
     /// Languages this book has a translation in.
     pub translations: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ManifestChapter {
+    pub id: String,
+    pub title: String,
 }
 
 #[derive(Debug, Clone, Serialize)]

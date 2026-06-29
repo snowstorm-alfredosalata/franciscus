@@ -142,6 +142,9 @@
 							{#if book.date}
 								<span class="text-muted-foreground"> ({book.date})</span>
 							{/if}
+							{#if book.description_short}
+								<span class="block text-sm text-muted-foreground mt-1 font-serif">{book.description_short}</span>
+							{/if}
 						</a>
 					</li>
 				{/each}
