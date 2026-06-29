@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import {
 		getTopicPage,
 		getTopicOccurrences,
-		resolveTopicSlug,
 		type TopicPage,
 		type TopicOccurrence
 	} from '$lib';
@@ -16,24 +14,13 @@
 	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 
 	const topicType = $derived($page.params.topic_type ?? '');
-	const urlSlug = $derived($page.params.topic_value ?? '');
+	// Canonical URL is /topics/<type>/<topic_value> (the source-file value).
+	// Unknown values fall through and the template renders the "no page" state.
+	const topicValue = $derived($page.params.topic_value ?? '');
 	const corpusLang = $derived(getCorpusLang());
 	const uiLang = $derived(getUiLang());
 
-	// Canonical URL is /topics/<type>/<topic_value> (the source-file value).
-	// A request for a lang_slug (e.g. .../st_chiara_di_assisi) is resolved to
-	// the canonical pair and redirected. Unknown slugs fall through and the
-	// template renders the "no page" state.
-	const canonical = $derived(resolveTopicSlug(topicType, urlSlug));
-	const topicValue = $derived(canonical?.topic_value ?? urlSlug);
-
-	$effect(() => {
-		if (canonical && canonical.topic_value !== urlSlug) {
-			goto(`/topics/${canonical.topic_type}/${canonical.topic_value}`, { replaceState: true });
-		}
-	});
-
-	// Topic page chrome (description, body, lang_slug) follows the UI language;
+	// Topic page chrome (description, body) follows the UI language;
 	// the occurrence list shows source-corpus material (book/chapter titles,
 	// paragraph bodies), so it follows the corpus language instead.
 	const topicPage = $derived(getTopicPage(topicType, topicValue, uiLang));

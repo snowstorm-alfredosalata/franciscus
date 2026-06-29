@@ -220,8 +220,7 @@ export function getTopicPages(lang: string = 'la'): TopicPage[] {
 	return queryAll<TopicPage>(
 		`SELECT tp.topic_type, tp.topic_value,
 		        COALESCE(tt.description, tp.description) AS description,
-		        COALESCE(tt.content,     tp.content)     AS content,
-		        tt.lang_slug AS lang_slug
+		        COALESCE(tt.content,     tp.content)     AS content
 		 FROM topic_pages tp
 		 LEFT JOIN topic_page_translations tt
 		        ON tt.topic_type = tp.topic_type AND tt.topic_value = tp.topic_value AND tt.lang = $lang
@@ -238,41 +237,12 @@ export function getTopicPage(
 	return queryOne<TopicPage>(
 		`SELECT tp.topic_type, tp.topic_value,
 		        COALESCE(tt.description, tp.description) AS description,
-		        COALESCE(tt.content,     tp.content)     AS content,
-		        tt.lang_slug AS lang_slug
+		        COALESCE(tt.content,     tp.content)     AS content
 		 FROM topic_pages tp
 		 LEFT JOIN topic_page_translations tt
 		        ON tt.topic_type = tp.topic_type AND tt.topic_value = tp.topic_value AND tt.lang = $lang
 		 WHERE tp.topic_type = $type AND tp.topic_value = $value`,
 		{ $type: topicType, $value: topicValue, $lang: lang }
-	);
-}
-
-/**
- * Resolve a possibly-localized URL slug back to the canonical (topic_type,
- * topic_value). `slug` is the value taken from the URL (`/topics/<type>/<slug>`).
- * Returns the canonical pair when `slug` is either the canonical value or a
- * `lang_slug` registered under any language. Returns null when nothing matches.
- *
- * The route uses this to redirect lang_slug URLs to their canonical form
- * (FORMAT.md §11.2 — canonical URL is always the source value).
- */
-export function resolveTopicSlug(
-	topicType: string,
-	slug: string
-): { topic_type: string; topic_value: string } | null {
-	const direct = queryOne<{ topic_type: string; topic_value: string }>(
-		`SELECT topic_type, topic_value FROM topic_pages
-		 WHERE topic_type = $type AND topic_value = $slug`,
-		{ $type: topicType, $slug: slug }
-	);
-	if (direct) return direct;
-
-	return queryOne<{ topic_type: string; topic_value: string }>(
-		`SELECT topic_type, topic_value FROM topic_page_translations
-		 WHERE topic_type = $type AND lang_slug = $slug
-		 LIMIT 1`,
-		{ $type: topicType, $slug: slug }
 	);
 }
 
@@ -320,20 +290,22 @@ export function getTopicOccurrences(
 }
 
 /**
- * Bulk-fetch the UI-lang lang_slug for every annotated topic, keyed by
- * `${topic_type}:${topic_value}`. Used by surfaces that render topic pills
- * (chapter reader, topic listing) so each pill displays the language-local
- * slug when one exists, falling back to the canonical value otherwise.
+ * Bulk-fetch the topic label (description) for every topic page, keyed by
+ * `${topic_type}:${topic_value}`. Prefers the UI-language translation,
+ * falling back to the base description. Used by surfaces that render topic
+ * pills (chapter reader).
  */
-export function getTopicLangSlugs(uiLang: string): Map<string, string> {
-	const rows = queryAll<{ topic_type: string; topic_value: string; lang_slug: string }>(
-		`SELECT topic_type, topic_value, lang_slug
-		 FROM topic_page_translations
-		 WHERE lang = $uiLang AND lang_slug IS NOT NULL`,
+export function getTopicDescriptions(uiLang: string): Map<string, string> {
+	const rows = queryAll<{ topic_type: string; topic_value: string; description: string }>(
+		`SELECT tp.topic_type, tp.topic_value,
+		        COALESCE(tt.description, tp.description) AS description
+		 FROM topic_pages tp
+		 LEFT JOIN topic_page_translations tt
+		        ON tt.topic_type = tp.topic_type AND tt.topic_value = tp.topic_value AND tt.lang = $uiLang`,
 		{ $uiLang: uiLang }
 	);
 	const map = new Map<string, string>();
-	for (const r of rows) map.set(`${r.topic_type}:${r.topic_value}`, r.lang_slug);
+	for (const r of rows) map.set(`${r.topic_type}:${r.topic_value}`, r.description);
 	return map;
 }
 

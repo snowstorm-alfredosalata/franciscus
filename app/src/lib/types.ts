@@ -49,8 +49,6 @@ export interface TopicPage {
 	topic_value: string;
 	description: string;
 	content: string;
-	/** Localized URL slug for the active corpus lang, when one exists. */
-	lang_slug?: string | null;
 }
 
 export interface Relation {
@@ -112,8 +110,10 @@ export interface ManifestTopic {
 	type: string;
 	value: string;
 	count: number;
-	/** Localized URL slug per UI language, when registered. */
-	slugs: Record<string, string>;
+	/** Source-language label (base topic-page description). */
+	description: string;
+	/** Localized label per UI language, when a translation exists. */
+	descriptions: Record<string, string>;
 }
 
 export interface SearchResult {

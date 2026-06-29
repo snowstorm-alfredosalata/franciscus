@@ -71,18 +71,11 @@ pub struct Annotation {
     pub comment: Option<String>,
 }
 
-/// Topic-page YAML frontmatter. The `topic_value` is NOT carried here — it is
-/// derived from the filename (see `<type>:<value>[.<lang>].md`). The `type:`
-/// field is duplicated so we can sanity-check it against the filename prefix.
+/// Topic-page YAML frontmatter. Both `topic_type` and `topic_value` are NOT
+/// carried here — they are derived from the path (`topics/<type>/<value>[.<lang>].md`).
 #[derive(Debug, Clone, Deserialize)]
 pub struct TopicPageFrontmatter {
-    #[serde(rename = "type")]
-    pub topic_type: String,
     pub description: String,
-    /// Translation files only: alternative URL slug for that language. Source
-    /// files MUST NOT set this; translation files MAY.
-    #[serde(default)]
-    pub lang_slug: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -100,7 +93,7 @@ pub struct TopicPage {
 // `app/src/lib/types.ts`; keep them in sync manually (no codegen).
 
 /// Bump when the manifest layout changes incompatibly (the app may gate on it).
-pub const MANIFEST_SCHEMA: u32 = 1;
+pub const MANIFEST_SCHEMA: u32 = 2;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Manifest {
@@ -137,7 +130,9 @@ pub struct ManifestTopic {
     pub topic_type: String,
     pub value: String,
     pub count: u32,
-    /// Localized URL slug per UI language, when one is registered. Includes
-    /// every language so the client can switch UI language without the DB.
-    pub slugs: BTreeMap<String, String>,
+    /// Source-language label (the base topic-page description).
+    pub description: String,
+    /// Localized label per UI language. Includes every language with a topic
+    /// translation, so the client can switch UI language without the DB.
+    pub descriptions: BTreeMap<String, String>,
 }

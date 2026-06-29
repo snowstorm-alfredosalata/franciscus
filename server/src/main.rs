@@ -53,22 +53,19 @@ fn render_topic_body(body: &str) -> String {
     comrak::markdown_to_html(body, &options).trim().to_string()
 }
 
-/// Decompose a topic-page filename stem into `(topic_type, topic_value, lang)`.
-/// Stems look like `person:st_clare_of_assisi` (source) or
-/// `person:st_clare_of_assisi.it` (translation). The `:` always precedes any
-/// `.<lang>` suffix.
-fn parse_topic_filename(stem: &str) -> Result<(String, String, Option<String>), String> {
-    let (topic_type, rest) = stem
-        .split_once(':')
-        .ok_or_else(|| format!("topic filename missing ':' separator: {stem}"))?;
-    let (topic_value, lang) = match rest.split_once('.') {
+/// Decompose a topic-page filename stem into `(topic_value, lang)`. The topic
+/// type comes from the parent directory (`topics/<type>/<value>[.<lang>].md`),
+/// not the filename. Stems look like `st_clare_of_assisi` (source) or
+/// `st_clare_of_assisi.it` (translation).
+fn parse_topic_filename(stem: &str) -> Result<(String, Option<String>), String> {
+    let (topic_value, lang) = match stem.split_once('.') {
         Some((value, lang)) => (value, Some(lang.to_string())),
-        None => (rest, None),
+        None => (stem, None),
     };
-    if topic_type.is_empty() || topic_value.is_empty() {
-        return Err(format!("topic filename has empty type or value: {stem}"));
+    if topic_value.is_empty() {
+        return Err(format!("topic filename has empty value: {stem}"));
     }
-    Ok((topic_type.to_string(), topic_value.to_string(), lang))
+    Ok((topic_value.to_string(), lang))
 }
 
 /// Build the sitemap for the prerendered hub routes. Content routes
@@ -177,71 +174,60 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
     }
 
     let topics_dir = data_dir.join("topics");
-    let mut topic_translation_files: Vec<PathBuf> = Vec::new();
+    let mut topic_translation_files: Vec<(String, PathBuf)> = Vec::new();
     let mut topic_page_translation_count = 0u32;
 
     if topics_dir.is_dir() {
+        // Topic type is the subdirectory name (`topics/<type>/<value>[.<lang>].md`).
         // First pass: ingest source (canonical) topic pages so the FK on the
         // translations table is satisfied. Defer translations to a second pass.
-        for entry in std::fs::read_dir(&topics_dir).expect("Cannot read topics dir") {
-            let entry = entry.expect("Cannot read entry");
-            let path = entry.path();
-            if !path.extension().is_some_and(|e| e == "md") {
+        for type_entry in std::fs::read_dir(&topics_dir).expect("Cannot read topics dir") {
+            let type_dir = type_entry.expect("Cannot read entry").path();
+            if !type_dir.is_dir() {
                 continue;
             }
-            let stem = path.file_stem().unwrap().to_string_lossy();
-            let (topic_type, topic_value, lang) = match parse_topic_filename(&stem) {
-                Ok(parts) => parts,
-                Err(e) => {
-                    eprintln!("  error parsing topic filename {}: {e}", path.display());
+            let topic_type = type_dir.file_name().unwrap().to_string_lossy().to_string();
+            for entry in std::fs::read_dir(&type_dir).expect("Cannot read topic type dir") {
+                let path = entry.expect("Cannot read entry").path();
+                if !path.extension().is_some_and(|e| e == "md") {
                     continue;
                 }
-            };
-            if lang.is_some() {
-                topic_translation_files.push(path);
-                continue;
-            }
-            let text = std::fs::read_to_string(&path).expect("Cannot read topic file");
-            match parse_topic_page(&text) {
-                Ok(page) => {
-                    if page.frontmatter.topic_type != topic_type {
-                        eprintln!(
-                            "  warning: topic {} / {}: frontmatter type '{}' disagrees with filename prefix '{}'; using filename",
-                            topic_type, topic_value, page.frontmatter.topic_type, topic_type
-                        );
+                let stem = path.file_stem().unwrap().to_string_lossy();
+                let (topic_value, lang) = match parse_topic_filename(&stem) {
+                    Ok(parts) => parts,
+                    Err(e) => {
+                        eprintln!("  error parsing topic filename {}: {e}", path.display());
+                        continue;
                     }
-                    if page.frontmatter.lang_slug.is_some() {
-                        eprintln!(
-                            "  warning: topic {} / {}: 'lang_slug' is only valid in translation files; ignoring",
-                            topic_type, topic_value
-                        );
-                    }
-                    println!("  topic: {} / {}", topic_type, topic_value);
-                    db::insert_topic_page(&conn, &topic_value, &page);
-                    topic_page_count += 1;
+                };
+                if lang.is_some() {
+                    topic_translation_files.push((topic_type.clone(), path));
+                    continue;
                 }
-                Err(e) => {
-                    eprintln!("  error parsing {}: {e}", path.display());
+                let text = std::fs::read_to_string(&path).expect("Cannot read topic file");
+                match parse_topic_page(&text) {
+                    Ok(page) => {
+                        println!("  topic: {} / {}", topic_type, topic_value);
+                        db::insert_topic_page(&conn, &topic_type, &topic_value, &page);
+                        topic_page_count += 1;
+                    }
+                    Err(e) => {
+                        eprintln!("  error parsing {}: {e}", path.display());
+                    }
                 }
             }
         }
 
-        for path in &topic_translation_files {
+        for (topic_type, path) in &topic_translation_files {
             let stem = path.file_stem().unwrap().to_string_lossy();
-            let (topic_type, topic_value, lang) = parse_topic_filename(&stem)
+            let (topic_value, lang) = parse_topic_filename(&stem)
                 .expect("topic filename validated in first pass");
             let lang = lang.expect("translation files always carry a lang");
             let text = std::fs::read_to_string(path).expect("Cannot read topic translation");
             match parse_topic_page(&text) {
                 Ok(page) => {
-                    if page.frontmatter.topic_type != topic_type {
-                        eprintln!(
-                            "  warning: topic {} / {} [{}]: frontmatter type '{}' disagrees with filename prefix '{}'; using filename",
-                            topic_type, topic_value, lang, page.frontmatter.topic_type, topic_type
-                        );
-                    }
                     println!("  topic translation: {} / {} [{}]", topic_type, topic_value, lang);
-                    db::insert_topic_page_translation(&conn, &topic_value, &lang, &page);
+                    db::insert_topic_page_translation(&conn, topic_type, &topic_value, &lang, &page);
                     topic_page_translation_count += 1;
                 }
                 Err(e) => {

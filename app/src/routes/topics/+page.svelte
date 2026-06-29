@@ -14,7 +14,7 @@
 	// inert until the background download finishes (permanently so with no JS).
 	const db = getDbState();
 
-	type TopicEntry = { topic_type: string; topic_value: string; count: number; lang_slug: string | null };
+	type TopicEntry = { topic_type: string; topic_value: string; count: number; label: string };
 
 	const grouped = $derived.by(() => {
 		const map = new Map<string, TopicEntry[]>();
@@ -23,7 +23,7 @@
 				topic_type: tpc.type,
 				topic_value: tpc.value,
 				count: tpc.count,
-				lang_slug: tpc.slugs[uiLang] ?? null
+				label: tpc.descriptions[uiLang] ?? tpc.description
 			};
 			const list = map.get(entry.topic_type) ?? [];
 			list.push(entry);
@@ -60,7 +60,7 @@
 								? ''
 								: 'pointer-events-none opacity-60'}"
 						>
-							{(topic.lang_slug ?? topic.topic_value).replaceAll('_', ' ')}
+							{topic.label}
 							<span class="text-xs opacity-60">({topic.count})</span>
 						</a>
 					{/each}

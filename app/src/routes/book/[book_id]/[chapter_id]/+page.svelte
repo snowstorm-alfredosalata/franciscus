@@ -9,7 +9,7 @@
 		getChapterAnnotations,
 		getParagraphTranslations,
 		getAsideTranslations,
-		getTopicLangSlugs,
+		getTopicDescriptions,
 		type Paragraph,
 		type Aside,
 		type Annotation
@@ -56,14 +56,14 @@
 		});
 	});
 
-	// Per-topic UI-lang slug used as the pill label, with `_` rendered as a
-	// space. Missing entries fall back to the canonical topic_value at the
-	// render site (also slug-with-underscores in the source language).
-	const topicLangSlugs = $derived(getTopicLangSlugs(uiLang));
+	// Per-topic label (UI-lang topic-page description, falling back to the base
+	// description). Topics with no page fall back to the value-as-words.
+	const topicDescriptions = $derived(getTopicDescriptions(uiLang));
 
 	function topicLabel(topicType: string, topicValue: string): string {
-		const slug = topicLangSlugs.get(`${topicType}:${topicValue}`) ?? topicValue;
-		return slug.replaceAll('_', ' ');
+		return (
+			topicDescriptions.get(`${topicType}:${topicValue}`) ?? topicValue.replaceAll('_', ' ')
+		);
 	}
 
 	const paragraphs = $derived(book && chapter ? getParagraphs(bookId, chapterId) : []);

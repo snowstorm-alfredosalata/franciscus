@@ -6,7 +6,7 @@ use crate::models::*;
 /// Shape version of the DB the app expects. Bump whenever the table layout
 /// changes; mirrored into `PRAGMA user_version` and a `meta` row so the app
 /// can detect an incompatible build. Stored but not gated on yet.
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 pub fn open_or_create(path: &str) -> Connection {
     let conn = Connection::open(path).expect("Failed to open database");
@@ -132,15 +132,11 @@ pub fn create_tables(conn: &Connection) {
             topic_type   TEXT NOT NULL,
             topic_value  TEXT NOT NULL,
             lang         TEXT NOT NULL,
-            lang_slug    TEXT,
             description  TEXT NOT NULL,
             content      TEXT NOT NULL,
             PRIMARY KEY (topic_type, topic_value, lang),
             FOREIGN KEY (topic_type, topic_value) REFERENCES topic_pages(topic_type, topic_value)
         );
-
-        CREATE INDEX IF NOT EXISTS idx_topic_lang_slug
-            ON topic_page_translations(lang, lang_slug);
 
         -- Build provenance + corpus stats, surfaced by the app (footer/About).
         -- One writer (this CLI), travels with the .db asset.
@@ -258,16 +254,30 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
             .collect()
     };
 
-    // Localized topic URL slugs, keyed by (type, value) -> {lang: slug}.
-    let mut slugs_by_topic: std::collections::HashMap<(String, String), BTreeMap<String, String>> =
+    // Base (source-language) topic labels, keyed by (type, value).
+    let mut base_desc: std::collections::HashMap<(String, String), String> =
         std::collections::HashMap::new();
     {
         let mut stmt = conn
-            .prepare(
-                "SELECT topic_type, topic_value, lang, lang_slug
-                 FROM topic_page_translations WHERE lang_slug IS NOT NULL",
-            )
-            .expect("prepare topic slugs");
+            .prepare("SELECT topic_type, topic_value, description FROM topic_pages")
+            .expect("prepare topic descriptions");
+        let rows = stmt
+            .query_map([], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?))
+            })
+            .expect("query topic descriptions");
+        for (topic_type, topic_value, desc) in rows.filter_map(|r| r.ok()) {
+            base_desc.insert((topic_type, topic_value), desc);
+        }
+    }
+
+    // Localized topic labels, keyed by (type, value) -> {lang: description}.
+    let mut localized_desc: std::collections::HashMap<(String, String), BTreeMap<String, String>> =
+        std::collections::HashMap::new();
+    {
+        let mut stmt = conn
+            .prepare("SELECT topic_type, topic_value, lang, description FROM topic_page_translations")
+            .expect("prepare topic translations");
         let rows = stmt
             .query_map([], |r| {
                 Ok((
@@ -277,12 +287,12 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
                     r.get::<_, String>(3)?,
                 ))
             })
-            .expect("query topic slugs");
-        for (topic_type, topic_value, lang, slug) in rows.filter_map(|r| r.ok()) {
-            slugs_by_topic
+            .expect("query topic translations");
+        for (topic_type, topic_value, lang, desc) in rows.filter_map(|r| r.ok()) {
+            localized_desc
                 .entry((topic_type, topic_value))
                 .or_default()
-                .insert(lang, slug);
+                .insert(lang, desc);
         }
     }
 
@@ -306,14 +316,18 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
             .expect("query topics");
         rows.filter_map(|r| r.ok())
             .map(|(topic_type, value, count)| {
-                let slugs = slugs_by_topic
-                    .remove(&(topic_type.clone(), value.clone()))
-                    .unwrap_or_default();
+                let key = (topic_type.clone(), value.clone());
+                // Fall back to the slug-as-words when no topic page exists.
+                let description = base_desc
+                    .remove(&key)
+                    .unwrap_or_else(|| value.replace('_', " "));
+                let descriptions = localized_desc.remove(&key).unwrap_or_default();
                 ManifestTopic {
                     topic_type,
                     value,
                     count: count as u32,
-                    slugs,
+                    description,
+                    descriptions,
                 }
             })
             .collect()
@@ -373,43 +387,36 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     }
 }
 
-/// Insert the source (canonical) topic page. `topic_value` is provided
-/// separately because it comes from the filename, not the frontmatter.
-pub fn insert_topic_page(conn: &Connection, topic_value: &str, page: &crate::models::TopicPage) {
+/// Insert the source (canonical) topic page. `topic_type` and `topic_value`
+/// come from the path (`topics/<type>/<value>.md`), not the frontmatter.
+pub fn insert_topic_page(
+    conn: &Connection,
+    topic_type: &str,
+    topic_value: &str,
+    page: &crate::models::TopicPage,
+) {
     conn.execute(
         "INSERT OR REPLACE INTO topic_pages (topic_type, topic_value, description, content)
          VALUES (?1, ?2, ?3, ?4)",
-        params![
-            page.frontmatter.topic_type,
-            topic_value,
-            page.frontmatter.description,
-            page.content
-        ],
+        params![topic_type, topic_value, page.frontmatter.description, page.content],
     )
     .expect("Failed to insert topic page");
 }
 
-/// Insert a translated topic page (`<type>:<value>.<lang>.md`). `topic_value`
-/// is the canonical id from the filename; `lang_slug` is the optional
-/// localized URL slug from the frontmatter.
+/// Insert a translated topic page (`topics/<type>/<value>.<lang>.md`).
+/// `topic_type` and `topic_value` come from the path.
 pub fn insert_topic_page_translation(
     conn: &Connection,
+    topic_type: &str,
     topic_value: &str,
     lang: &str,
     page: &crate::models::TopicPage,
 ) {
     conn.execute(
         "INSERT OR REPLACE INTO topic_page_translations
-            (topic_type, topic_value, lang, lang_slug, description, content)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![
-            page.frontmatter.topic_type,
-            topic_value,
-            lang,
-            page.frontmatter.lang_slug,
-            page.frontmatter.description,
-            page.content,
-        ],
+            (topic_type, topic_value, lang, description, content)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![topic_type, topic_value, lang, page.frontmatter.description, page.content],
     )
     .expect("Failed to insert topic page translation");
 }
