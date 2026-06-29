@@ -122,7 +122,7 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
                         translation_files.push(path);
                     } else {
                         let text = std::fs::read_to_string(&path).expect("Cannot read file");
-                        match parser::parse_book(&text) {
+                        match parser::parse_book(&text, &stem) {
                             Ok(book) => {
                                 println!("  book: {} ({})", book.meta.title, book.meta.id);
                                 db::insert_book(&conn, &book);
@@ -145,8 +145,9 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
         let stem = path.file_stem().unwrap().to_string_lossy();
         let dot_pos = stem.find('.').unwrap();
         let lang = &stem[dot_pos + 1..];
+        let book_id = &stem[..dot_pos];
         let text = std::fs::read_to_string(path).expect("Cannot read translation file");
-        match parser::parse_book(&text) {
+        match parser::parse_book(&text, book_id) {
             Ok(book) => {
                 println!("  translation: {} [{}]", book.meta.id, lang);
                 db::insert_translations(&conn, &book, lang);

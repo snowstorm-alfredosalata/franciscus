@@ -3,12 +3,16 @@ use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookMeta {
+    /// Derived from the filename, not the frontmatter.
     pub id: String,
     pub title: String,
     pub author: String,
     pub date: Option<String>,
     pub reference_edition: Option<String>,
-    pub license: String,
+    // Translation-only frontmatter; None on source `<id>.md` files.
+    pub translator: Option<String>,
+    pub provenance: Option<String>,
+    pub status: Option<String>,
 }
 
 // --- Parsed structures (from markdown, before DB insertion) ---
@@ -20,6 +24,10 @@ pub enum Block {
         label: Option<String>,
         content: String,
         position: u32,
+        // Per-paragraph translation provenance; inherits frontmatter defaults.
+        // Always None on source `<id>.md` paragraphs.
+        provenance: Option<String>,
+        by: Option<String>,
     },
     Aside {
         id: String,
@@ -45,7 +53,7 @@ pub struct ParsedBook {
 // --- JSON annotation sidecar (FORMAT.md §10) ---
 // File is `books/<book_id>.json`, a flat array; book_id comes from the filename.
 
-fn default_by_type() -> String {
+fn default_provenance() -> String {
     "ai".to_string()
 }
 
@@ -63,10 +71,9 @@ pub struct Annotation {
     #[serde(default)]
     pub relations: Option<String>,
     pub by: String,
-    #[serde(default = "default_by_type")]
-    pub by_type: String,
-    #[serde(default)]
-    pub verified: bool,
+    /// `ai` · `reviewed` · `human`; defaults to `ai`.
+    #[serde(default = "default_provenance")]
+    pub provenance: String,
     #[serde(default)]
     pub comment: Option<String>,
 }

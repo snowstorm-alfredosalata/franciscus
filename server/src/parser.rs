@@ -1,9 +1,24 @@
 use regex::Regex;
 use crate::models::*;
 
-pub fn parse_book(input: &str) -> Result<ParsedBook, String> {
-    let (meta, body) = parse_frontmatter(input)?;
-    let chapters = parse_body(body)?;
+pub fn parse_book(input: &str, id: &str) -> Result<ParsedBook, String> {
+    let (mut meta, body) = parse_frontmatter(input)?;
+    meta.id = id.to_string();
+    let mut chapters = parse_body(body)?;
+    // Per-<p> provenance/by inherit the translation frontmatter defaults.
+    // (Source files have neither, so paragraphs stay None.)
+    for ch in &mut chapters {
+        for block in &mut ch.blocks {
+            if let Block::Paragraph { provenance, by, .. } = block {
+                if provenance.is_none() {
+                    *provenance = meta.provenance.clone();
+                }
+                if by.is_none() {
+                    *by = meta.translator.clone();
+                }
+            }
+        }
+    }
     Ok(ParsedBook { meta, chapters })
 }
 
@@ -24,12 +39,13 @@ fn parse_frontmatter(input: &str) -> Result<(BookMeta, &str), String> {
 }
 
 fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
-    let mut id = None;
     let mut title = None;
     let mut author = None;
     let mut date = None;
     let mut reference_edition = None;
-    let mut license = None;
+    let mut translator = None;
+    let mut provenance = None;
+    let mut status = None;
 
     for line in yaml.lines() {
         let line = line.trim();
@@ -40,25 +56,49 @@ fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
             let key = key.trim();
             let val = val.trim().trim_matches('"');
             match key {
-                "id" => id = Some(val.to_string()),
                 "title" => title = Some(val.to_string()),
                 "author" => author = Some(val.to_string()),
                 "date" => date = Some(val.trim().to_string()),
                 "reference_edition" => reference_edition = Some(val.to_string()),
-                "license" => license = Some(val.to_string()),
+                "translator" => translator = Some(val.to_string()),
+                "provenance" => provenance = Some(val.to_string()),
+                "status" => status = Some(val.to_string()),
                 _ => {}
             }
         }
     }
 
     Ok(BookMeta {
-        id: id.ok_or("Missing 'id' in frontmatter")?,
+        // Set from the filename by the caller.
+        id: String::new(),
         title: title.ok_or("Missing 'title' in frontmatter")?,
         author: author.ok_or("Missing 'author' in frontmatter")?,
         date,
         reference_edition,
-        license: license.unwrap_or_else(|| "CC0-1.0".to_string()),
+        translator,
+        provenance,
+        status,
     })
+}
+
+/// Extract `(id, label, provenance, by)` from a `<p>` tag's attribute string.
+/// `id` is required; the rest are optional and inherit frontmatter defaults later.
+fn p_attrs(
+    attrs: &str,
+    re_attr: &Regex,
+) -> Result<(String, Option<String>, Option<String>, Option<String>), String> {
+    let (mut id, mut label, mut provenance, mut by) = (None, None, None, None);
+    for c in re_attr.captures_iter(attrs) {
+        let val = c[2].to_string();
+        match &c[1] {
+            "id" => id = Some(val),
+            "label" => label = Some(val),
+            "provenance" => provenance = Some(val),
+            "by" => by = Some(val),
+            _ => {}
+        }
+    }
+    Ok((id.ok_or("<p> missing id attribute")?, label, provenance, by))
 }
 
 fn replace_verse_markers(content: &str, paragraph_id: &str) -> String {
@@ -72,7 +112,10 @@ fn replace_verse_markers(content: &str, paragraph_id: &str) -> String {
 
 fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
     let re_chapter = Regex::new(r#"^##\s+(.+?)\s*<a\s+id="([^"]+)"\s*>\s*</a>\s*$"#).unwrap();
-    let re_p_open = Regex::new(r#"^<p\s+id="([^"]+)"(?:\s+label="([^"]+)")?\s*>"#).unwrap();
+    // ponytail: attribute values may not contain '>' (the per-<p> `by` is a plain
+    // name; emails live only in frontmatter `translator`). Order-independent attrs.
+    let re_p_open = Regex::new(r#"^<p\s+([^>]*?)\s*>"#).unwrap();
+    let re_attr = Regex::new(r#"(\w+)="([^"]*)""#).unwrap();
     let re_p_close = Regex::new(r"^</p>\s*$").unwrap();
     let re_aside_open = Regex::new(r"^<aside>\s*$").unwrap();
     let re_aside_close = Regex::new(r"^</aside>\s*$").unwrap();
@@ -82,7 +125,13 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
 
     enum State {
         Idle,
-        InParagraph { id: String, label: Option<String>, lines: Vec<String> },
+        InParagraph {
+            id: String,
+            label: Option<String>,
+            provenance: Option<String>,
+            by: Option<String>,
+            lines: Vec<String>,
+        },
         InAside { lines: Vec<String> },
     }
 
@@ -112,10 +161,8 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
 
         match &mut state {
             State::Idle => {
-                if re_p_open.is_match(line) {
-                    let caps = re_p_open.captures(line).unwrap();
-                    let id = caps[1].to_string();
-                    let label = caps.get(2).map(|m| m.as_str().to_string());
+                if let Some(caps) = re_p_open.captures(line) {
+                    let (id, label, provenance, by) = p_attrs(&caps[1], &re_attr)?;
                     let rest = re_p_open.replace(line, "").trim().to_string();
                     let mut lines = Vec::new();
                     if !rest.is_empty() && !re_p_close.is_match(&rest) {
@@ -131,16 +178,18 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
                                 label,
                                 content,
                                 position: block_pos,
+                                provenance,
+                                by,
                             });
                         }
                     } else {
-                        state = State::InParagraph { id, label, lines };
+                        state = State::InParagraph { id, label, provenance, by, lines };
                     }
                 } else if re_aside_open.is_match(line) {
                     state = State::InAside { lines: Vec::new() };
                 }
             }
-            State::InParagraph { id, label, lines } => {
+            State::InParagraph { id, label, provenance, by, lines } => {
                 if re_p_close.is_match(line) {
                     block_pos += 1;
                     let raw = lines.join("\n").trim().to_string();
@@ -151,6 +200,8 @@ fn parse_body(body: &str) -> Result<Vec<ParsedChapter>, String> {
                             label: label.clone(),
                             content,
                             position: block_pos,
+                            provenance: provenance.clone(),
+                            by: by.clone(),
                         });
                     }
                     state = State::Idle;

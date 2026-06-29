@@ -23,8 +23,7 @@ pub fn create_tables(conn: &Connection) {
             title           TEXT NOT NULL,
             author          TEXT NOT NULL,
             date            TEXT,
-            ref_edition     TEXT,
-            license         TEXT NOT NULL DEFAULT 'CC0-1.0'
+            ref_edition     TEXT
         );
 
         CREATE TABLE IF NOT EXISTS chapters (
@@ -64,8 +63,7 @@ pub fn create_tables(conn: &Connection) {
             topic_type       TEXT NOT NULL,
             topic_value      TEXT NOT NULL,
             by_whom         TEXT NOT NULL DEFAULT 'ai',
-            by_type         TEXT NOT NULL DEFAULT 'ai',
-            verified        INTEGER NOT NULL DEFAULT 0,
+            provenance      TEXT NOT NULL DEFAULT 'ai',
             comment         TEXT,
             FOREIGN KEY (book_id, paragraph_id) REFERENCES paragraphs(book_id, id)
         );
@@ -86,8 +84,7 @@ pub fn create_tables(conn: &Connection) {
             target_paragraph_id TEXT NOT NULL,
             relation_type       TEXT NOT NULL,
             by_whom             TEXT NOT NULL DEFAULT 'ai',
-            by_type             TEXT NOT NULL DEFAULT 'ai',
-            verified            INTEGER NOT NULL DEFAULT 0,
+            provenance          TEXT NOT NULL DEFAULT 'ai',
             comment             TEXT,
             -- ponytail: no FK on target; cross-work parallels may point at any book
             FOREIGN KEY (source_book_id, source_paragraph_id) REFERENCES paragraphs(book_id, id)
@@ -98,6 +95,8 @@ pub fn create_tables(conn: &Connection) {
             paragraph_id    TEXT NOT NULL,
             lang            TEXT NOT NULL,
             content         TEXT NOT NULL,
+            provenance      TEXT,
+            by_whom         TEXT,
             PRIMARY KEY (book_id, paragraph_id, lang),
             FOREIGN KEY (book_id, paragraph_id) REFERENCES paragraphs(book_id, id)
         );
@@ -350,9 +349,9 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
 pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     let m = &book.meta;
     conn.execute(
-        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, license)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![m.id, m.title, m.author, m.date, m.reference_edition, m.license],
+        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![m.id, m.title, m.author, m.date, m.reference_edition],
     )
     .expect("Failed to insert book");
 
@@ -366,7 +365,7 @@ pub fn insert_book(conn: &Connection, book: &ParsedBook) {
 
         for block in &ch.blocks {
             match block {
-                Block::Paragraph { id, label, content, position } => {
+                Block::Paragraph { id, label, content, position, .. } => {
                     conn.execute(
                         "INSERT OR REPLACE INTO paragraphs (id, book_id, chapter_id, position, content, label)
                          VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
@@ -444,11 +443,11 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
 
         for block in &ch.blocks {
             match block {
-                Block::Paragraph { id, content, .. } => {
+                Block::Paragraph { id, content, provenance, by, .. } => {
                     conn.execute(
-                        "INSERT OR REPLACE INTO paragraph_translations (book_id, paragraph_id, lang, content)
-                         VALUES (?1, ?2, ?3, ?4)",
-                        params![book_id, id, lang, content],
+                        "INSERT OR REPLACE INTO paragraph_translations (book_id, paragraph_id, lang, content, provenance, by_whom)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                        params![book_id, id, lang, content, provenance, by],
                     )
                     .expect("Failed to insert paragraph translation");
                 }
@@ -536,9 +535,9 @@ pub fn insert_annotations(conn: &Connection, book_id: &str, annotations: &[Annot
                 continue;
             };
             conn.execute(
-                "INSERT INTO annotations (book_id, paragraph_id, paragraph_to_id, topic_type, topic_value, by_whom, by_type, verified, comment)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                params![book_id, a.paragraph, a.paragraph_to, topic_type.trim(), topic_value.trim(), a.by, a.by_type, a.verified, a.comment],
+                "INSERT INTO annotations (book_id, paragraph_id, paragraph_to_id, topic_type, topic_value, by_whom, provenance, comment)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![book_id, a.paragraph, a.paragraph_to, topic_type.trim(), topic_value.trim(), a.by, a.provenance, a.comment],
             )
             .expect("Failed to insert annotation");
             topic_rows += 1;
@@ -555,9 +554,9 @@ pub fn insert_annotations(conn: &Connection, book_id: &str, annotations: &[Annot
                 continue;
             };
             conn.execute(
-                "INSERT INTO relations (source_book_id, source_paragraph_id, target_book_id, target_paragraph_id, relation_type, by_whom, by_type, verified, comment)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                params![book_id, a.paragraph, target_book, target_par, rel_type.trim(), a.by, a.by_type, a.verified, a.comment],
+                "INSERT INTO relations (source_book_id, source_paragraph_id, target_book_id, target_paragraph_id, relation_type, by_whom, provenance, comment)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![book_id, a.paragraph, target_book, target_par, rel_type.trim(), a.by, a.provenance, a.comment],
             )
             .expect("Failed to insert relation");
             rel_rows += 1;
@@ -591,8 +590,7 @@ mod tests {
             topics: Some("person:st_francis, place:assisi".into()),
             relations: Some("same_episode:LMj-mir10-6, related_to:2Cel-121".into()),
             by: "Tester".into(),
-            by_type: "human".into(),
-            verified: true,
+            provenance: "human".into(),
             comment: Some("note".into()),
         };
         let (topic_rows, rel_rows) = insert_annotations(&conn, "1Cel", &[a]);
