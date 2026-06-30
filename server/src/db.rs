@@ -603,7 +603,7 @@ pub fn create_fts_index(conn: &Connection) {
         .expect("Failed to optimize FTS index");
 }
 
-/// Insert a book's annotation sidecar (FORMAT.md §10). Each `type:value` pair in
+/// Insert a book's annotation sidecar (spec/annotations.md). Each `type:value` pair in
 /// an entry's `topics` becomes an annotation row; each `reltype:target` pair
 /// in `relations` becomes a relation row. Returns (topic rows, relation rows).
 pub fn insert_annotations(conn: &Connection, book_id: &str, annotations: &[Annotation]) -> (usize, usize) {

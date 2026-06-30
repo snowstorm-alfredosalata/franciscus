@@ -82,8 +82,9 @@ The Rust crate in `server/` is a **build tool, not a web server**.
 
 - **No server for reads.** The corpus is small and changes at editorial pace, so
   the `.db` is a static asset. Free static hosting, offline capability.
-- **Rust for the pipeline.** Parses the custom `FORMAT.md` Markdown + JSON
-  annotations into SQLite. Writes only.
+- **Rust for the pipeline.** Parses the corpus Markdown texts and their YAML
+  annotation sidecars (per the `franciscus-data/spec/` format) into SQLite.
+  Writes only.
 - **SvelteKit, SPA mode.** `adapter-static`, no SSR (`ssr=false`,
   `prerender=false` in `+layout.ts`). Chosen over a Rust SSR stack for
   contributor accessibility.

@@ -14,7 +14,6 @@
 	let { languages = [] }: { languages?: string[] } = $props();
 
 	const LANG_LABELS: Record<string, string> = {
-		la: 'Latina',
 		it: 'Italiano',
 		en: 'English',
 		fr: 'Français',

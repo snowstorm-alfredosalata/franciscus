@@ -168,7 +168,7 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
             Ok(sidecar) => {
                 // Cover descriptions, keyed by UI language. The long description
                 // is authored as Markdown and injected via {@html}, so render it
-                // to HTML now (paragraph breaks survive, unlike a single <p>).
+                // to HTML now.
                 let long_html: std::collections::BTreeMap<String, String> = sidecar
                     .description
                     .iter()

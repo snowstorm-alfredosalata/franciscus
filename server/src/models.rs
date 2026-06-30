@@ -21,14 +21,12 @@ pub struct BookMeta {
     /// the counterpart of `translation_source` for translations.
     #[serde(default)]
     pub source: Option<String>,
-    // Editorial descriptions are NOT frontmatter — they live in the per-book
-    // sidecar (`books/<id>.yaml`, keyed by UI language) since they are an
-    // annotation about the work, not part of any rendition. See `BookSidecar`.
+    // Editorial descriptions live in the per-book sidecar (`books/<id>.yaml`,
+    // keyed by UI language); they describe the work, not any one rendition.
+    // See `BookSidecar`.
     // Translation-only frontmatter; None on source `<id>.md` files. These carry
     // the rendition's provenance, from which the book page's editorial note is
-    // generated client-side (per UI language). The hand-authored `notes` field
-    // was retired in favour of this — see the provenance note generator in the
-    // app. Extra frontmatter keys (e.g. a stale `notes:`) are ignored by serde.
+    // generated client-side (per UI language).
     #[serde(default)]
     pub translator: Option<String>,
     #[serde(default)]
@@ -74,7 +72,7 @@ pub struct ParsedBook {
     pub chapters: Vec<ParsedChapter>,
 }
 
-// --- Per-book YAML sidecar (FORMAT.md §10) ---
+// --- Per-book YAML sidecar (spec/annotations.md) ---
 // File is `books/<book_id>.yaml`; book_id comes from the filename. It carries
 // book-level "cover" properties (editorial descriptions, keyed by UI language)
 // at the top, and the paragraph annotations nested under `annotations`.
