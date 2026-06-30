@@ -21,6 +21,8 @@ might be somewhat loose or subjective.
   provenance.
 - **DB loading UI** (`DbGate` / `DbProgressBar`) for the client-side database
   download.
+- **Improved Navigation UI** restructuring navbar, adding logos and navigation to
+  books.
 
 ### Changed
 - **Ingestion updated for the new corpus schema** — translation and per-paragraph

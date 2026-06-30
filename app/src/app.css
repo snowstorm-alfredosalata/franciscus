@@ -53,6 +53,21 @@
 	--color-royal-900: oklch(0.24 0.05 264);
 	--color-royal-950: oklch(0.165 0.035 264);
 
+	/* Neutral slate — a true achromatic gray (chroma 0) powering the dark theme
+	   surfaces (replaces the old royal/night-blue base). No hue tint, so it reads
+	   as plain gray rather than blue. */
+	--color-slate-50: oklch(0.984 0 0);
+	--color-slate-100: oklch(0.968 0 0);
+	--color-slate-200: oklch(0.929 0 0);
+	--color-slate-300: oklch(0.869 0 0);
+	--color-slate-400: oklch(0.704 0 0);
+	--color-slate-500: oklch(0.554 0 0);
+	--color-slate-600: oklch(0.446 0 0);
+	--color-slate-700: oklch(0.372 0 0);
+	--color-slate-800: oklch(0.355 0 0);
+	--color-slate-900: oklch(0.31 0 0);
+	--color-slate-950: oklch(0.27 0 0);
+
 	--color-parchment-50: oklch(0.985 0.008 85);
 	--color-parchment-100: oklch(0.965 0.012 85);
 	--color-parchment-200: oklch(0.928 0.016 85);
@@ -153,9 +168,9 @@ mark.search-highlight {
 }
 
 /* shadcn semantic tokens mapped onto the manuscript palette: warm parchment
-   surfaces + crimson brand + gold accent (light), deep night blue + royal blue
-   surfaces + royal brand + gold accent (dark). Remapping these recolors every
-   shadcn primitive at once. */
+   surfaces + crimson brand + gold accent (light), muted slate surfaces +
+   crimson brand + gold accent (dark — brand colors match the light theme).
+   Remapping these recolors every shadcn primitive at once. */
 :root {
 	--background: var(--color-parchment-50);
 	--foreground: var(--color-parchment-900);
@@ -192,36 +207,36 @@ mark.search-highlight {
 }
 
 .dark {
-	--background: var(--color-royal-950);
+	--background: var(--color-slate-950);
 	--foreground: oklch(0.945 0.014 85);
-	--card: var(--color-royal-900);
+	--card: var(--color-slate-900);
 	--card-foreground: oklch(0.945 0.014 85);
-	--popover: var(--color-royal-900);
+	--popover: var(--color-slate-900);
 	--popover-foreground: oklch(0.945 0.014 85);
-	--primary: var(--color-royal-600);
+	--primary: var(--color-crimson-600);
 	--primary-foreground: var(--color-parchment-50);
-	--secondary: var(--color-royal-800);
-	--secondary-foreground: oklch(0.945 0.014 85);
-	--muted: oklch(0.22 0.04 264);
-	--muted-foreground: oklch(0.72 0.02 260);
-	--accent: var(--color-royal-800);
+	--secondary: var(--color-gold-100);
+	--secondary-foreground: var(--color-crimson-800);
+	--muted: var(--color-slate-800);
+	--muted-foreground: var(--color-slate-400);
+	--accent: var(--color-slate-800);
 	--accent-foreground: oklch(0.945 0.014 85);
 	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(0.4 0.09 264);
-	--input: oklch(0.45 0.09 264);
+	--border: oklch(0.44 0 0);
+	--input: oklch(0.48 0 0);
 	--ring: var(--color-gold-400);
 	--chart-1: var(--color-crimson-400);
 	--chart-2: var(--color-gold-400);
 	--chart-3: var(--color-royal-400);
 	--chart-4: var(--color-gold-300);
 	--chart-5: var(--color-crimson-300);
-	--sidebar: var(--color-royal-950);
+	--sidebar: var(--color-slate-950);
 	--sidebar-foreground: oklch(0.945 0.014 85);
-	--sidebar-primary: var(--color-royal-600);
+	--sidebar-primary: var(--color-crimson-600);
 	--sidebar-primary-foreground: var(--color-parchment-50);
-	--sidebar-accent: var(--color-royal-800);
+	--sidebar-accent: var(--color-slate-800);
 	--sidebar-accent-foreground: oklch(0.945 0.014 85);
-	--sidebar-border: oklch(0.4 0.09 264);
+	--sidebar-border: oklch(0.44 0 0);
 	--sidebar-ring: var(--color-gold-400);
 }
 
@@ -278,6 +293,10 @@ mark.search-highlight {
 	}
 	html {
 		@apply font-sans;
+		/* Scale the whole UI ~10% up: every text/spacing/icon size resolves to
+		   rem, so bumping the root size zooms the interface proportionally. The
+		   reader's --reader-scale knob still compounds on top of this. */
+		font-size: 110%;
 	}
 	/* Capitalis-style display face for major titles (manuscript header feel),
 	   with a short gilt flourish underline drawn from the logo gold. */
