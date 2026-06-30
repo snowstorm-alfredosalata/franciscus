@@ -39,15 +39,8 @@ fn parse_frontmatter(input: &str) -> Result<(BookMeta, &str), String> {
 }
 
 fn parse_yaml_frontmatter(yaml: &str) -> Result<BookMeta, String> {
-    let mut meta: BookMeta =
+    let meta: BookMeta =
         serde_yaml::from_str(yaml).map_err(|e| format!("Invalid frontmatter: {e}"))?;
-    // serde_yaml keeps the trailing newline a folded `>` scalar produces; trim it.
-    let trim = |s: Option<String>| s.map(|v| v.trim().to_string()).filter(|v| !v.is_empty());
-    meta.description_short = trim(meta.description_short);
-    meta.notes = trim(meta.notes);
-    // The long description is authored as Markdown and injected via {@html}, so
-    // render it to HTML now (paragraph breaks survive, unlike a single <p>).
-    meta.description = trim(meta.description).map(|d| crate::render_markdown(&d));
     Ok(meta)
 }
 
@@ -208,31 +201,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_description_short_and_treats_bare_key_as_none() {
-        let with = "title: T\nauthor: A\ndescription_short: \"A short blurb\"\n";
-        assert_eq!(
-            parse_yaml_frontmatter(with).unwrap().description_short.as_deref(),
-            Some("A short blurb")
-        );
-
-        let without = "title: T\nauthor: A\ndescription_short:\n";
-        assert_eq!(parse_yaml_frontmatter(without).unwrap().description_short, None);
+    fn parses_minimal_frontmatter() {
+        let yaml = "title: T\nauthor: A\n";
+        let meta = parse_yaml_frontmatter(yaml).unwrap();
+        assert_eq!(meta.title, "T");
+        assert_eq!(meta.author, "A");
+        assert_eq!(meta.date, None);
     }
 
     #[test]
-    fn renders_description_markdown_to_html() {
-        // Folded `>` joins wrapped lines into one paragraph.
-        let folded = "title: T\nauthor: A\ndescription: >\n    First line\n    second line.\n";
-        assert_eq!(
-            parse_yaml_frontmatter(folded).unwrap().description.as_deref(),
-            Some("<p>First line second line.</p>")
-        );
-
-        // Literal `|` keeps the blank line, so Markdown yields two paragraphs.
-        let literal = "title: T\nauthor: A\ndescription: |\n    One.\n\n    Two.\n";
-        assert_eq!(
-            parse_yaml_frontmatter(literal).unwrap().description.as_deref(),
-            Some("<p>One.</p>\n<p>Two.</p>")
-        );
+    fn reads_translation_provenance_fields() {
+        let yaml = "title: T\nauthor: A\nprovenance: human\nstatus: final\ntranslation_source: OFM.org\n";
+        let meta = parse_yaml_frontmatter(yaml).unwrap();
+        assert_eq!(meta.provenance.as_deref(), Some("human"));
+        assert_eq!(meta.status.as_deref(), Some("final"));
+        assert_eq!(meta.translation_source.as_deref(), Some("OFM.org"));
     }
 }

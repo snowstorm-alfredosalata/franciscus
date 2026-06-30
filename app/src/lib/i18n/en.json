@@ -31,7 +31,15 @@
 		"notFound": "Book not found.",
 		"chaptersHeading": "Chapters",
 		"notesHeading": "Notes",
-		"continueReading": "Continue reading"
+		"continueReading": "Continue reading",
+		"note": {
+			"aiDraft": "This translation was produced by AI and is undergoing editorial review; it is not suitable for scholarly citation.",
+			"ai": "This translation was produced by AI.",
+			"officialFrom": "Official translation from {source}.",
+			"draft": "This translation is a draft, undergoing editorial review.",
+			"human": "Reviewed human translation.",
+			"sourceFrom": "Source text from {source}."
+		}
 	},
 	"chapter": {
 		"notFound": "Chapter not found."

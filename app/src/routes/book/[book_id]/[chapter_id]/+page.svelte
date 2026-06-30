@@ -27,7 +27,7 @@
 
 	const corpusLang = $derived(getCorpusLang());
 	const uiLang = $derived(getUiLang());
-	const book = $derived(getBook(bookId, corpusLang));
+	const book = $derived(getBook(bookId, corpusLang, uiLang));
 	const chapters = $derived(book ? getChapters(bookId, corpusLang) : []);
 	const chapter = $derived(chapters.find((c) => c.id === chapterId));
 

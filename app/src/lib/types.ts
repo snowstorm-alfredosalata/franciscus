@@ -4,13 +4,21 @@ export interface BookMeta {
 	author: string;
 	date: string | null;
 	ref_edition: string | null;
-	/** One-line description (localized); shown on the home book list. */
+	/** One-line description (in the UI language); shown on the home book list.
+	 *  Sourced from the per-book sidecar's cover properties. */
 	description_short: string | null;
-	/** Long description (localized), authored as Markdown and stored as rendered
-	 *  HTML — inject with {@html}, do not text-render. */
+	/** Long description (in the UI language), authored as Markdown and stored as
+	 *  rendered HTML — inject with {@html}, do not text-render. */
 	description: string | null;
-	/** Free-text editorial note (localized); shown on the book page. */
-	notes: string | null;
+	/** Provenance of the rendition being read (corpus language), used to
+	 *  auto-generate the book page's editorial note in the UI language. Null on
+	 *  the Latin source rendition, which has no translation provenance. */
+	provenance: string | null;
+	status: string | null;
+	translation_source: string | null;
+	/** Where the source-language (Latin) text was obtained; the source
+	 *  rendition's counterpart to translation_source. Book-level. */
+	source: string | null;
 }
 
 export interface Chapter {
@@ -108,10 +116,10 @@ export interface ManifestBook {
 	author: string;
 	date: string | null;
 	reference_edition: string | null;
-	/** Source-language descriptions/notes; localized variants come from the DB. */
+	/** Default-UI-language (English) cover description for prerender; the actual
+	 *  UI-language variant swaps in from the DB once it loads. */
 	description_short: string | null;
 	description: string | null;
-	notes: string | null;
 	/** Source-language chapter list (reading order), for the prerendered TOC. */
 	chapters: ManifestChapter[];
 	translations: string[];

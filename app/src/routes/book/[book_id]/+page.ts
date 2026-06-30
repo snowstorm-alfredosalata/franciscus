@@ -23,7 +23,12 @@ export const load: PageLoad = async ({ params, parent }) => {
 		ref_edition: book.reference_edition,
 		description_short: book.description_short,
 		description: book.description,
-		notes: book.notes
+		// Provenance/notes come from the DB rendition once it loads; the
+		// prerendered (Latin source) view shows no editorial note.
+		provenance: null,
+		status: null,
+		translation_source: null,
+		source: null
 	};
 	return { book: meta, chapters: book.chapters };
 };

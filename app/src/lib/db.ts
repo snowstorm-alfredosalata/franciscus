@@ -163,33 +163,46 @@ function queryOne<T>(sql: string, params: BindParams = {}): T | null {
 	return results[0] ?? null;
 }
 
-export function getBooks(lang: string = 'la'): BookMeta[] {
-	return queryAll<BookMeta>(
-		`SELECT b.id,
-		        COALESCE(bt.title, b.title) AS title,
+// Three axes, joined separately:
+//  - title follows the corpus language (it is the source work's title),
+//  - description follows the UI language (an editorial blurb about the work,
+//    from book_descriptions; English is the default fallback),
+//  - provenance follows the corpus rendition being read (book_translations),
+//    and the page turns it into an editorial note in the UI language.
+const BOOK_COLS = `COALESCE(bc.title, b.title) AS title,
 		        b.author, b.date, b.ref_edition,
-		        COALESCE(bt.description_short, b.description_short) AS description_short,
-		        COALESCE(bt.description, b.description) AS description,
-		        COALESCE(bt.notes, b.notes) AS notes
+		        COALESCE(du.description_short, den.description_short) AS description_short,
+		        COALESCE(du.description, den.description) AS description,
+		        bc.provenance AS provenance,
+		        bc.status AS status,
+		        bc.translation_source AS translation_source,
+		        b.source AS source`;
+
+const BOOK_JOINS = `LEFT JOIN book_translations bc ON bc.book_id = b.id AND bc.lang = $corpusLang
+		 LEFT JOIN book_descriptions du ON du.book_id = b.id AND du.lang = $uiLang
+		 LEFT JOIN book_descriptions den ON den.book_id = b.id AND den.lang = 'en'`;
+
+export function getBooks(corpusLang: string = 'la', uiLang: string = 'en'): BookMeta[] {
+	return queryAll<BookMeta>(
+		`SELECT b.id, ${BOOK_COLS}
 		 FROM books b
-		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
+		 ${BOOK_JOINS}
 		 ORDER BY b.id`,
-		{ $lang: lang }
+		{ $corpusLang: corpusLang, $uiLang: uiLang }
 	);
 }
 
-export function getBook(bookId: string, lang: string = 'la'): BookMeta | null {
+export function getBook(
+	bookId: string,
+	corpusLang: string = 'la',
+	uiLang: string = 'en'
+): BookMeta | null {
 	return queryOne<BookMeta>(
-		`SELECT b.id,
-		        COALESCE(bt.title, b.title) AS title,
-		        b.author, b.date, b.ref_edition,
-		        COALESCE(bt.description_short, b.description_short) AS description_short,
-		        COALESCE(bt.description, b.description) AS description,
-		        COALESCE(bt.notes, b.notes) AS notes
+		`SELECT b.id, ${BOOK_COLS}
 		 FROM books b
-		 LEFT JOIN book_translations bt ON bt.book_id = b.id AND bt.lang = $lang
+		 ${BOOK_JOINS}
 		 WHERE b.id = $id`,
-		{ $id: bookId, $lang: lang }
+		{ $id: bookId, $corpusLang: corpusLang, $uiLang: uiLang }
 	);
 }
 

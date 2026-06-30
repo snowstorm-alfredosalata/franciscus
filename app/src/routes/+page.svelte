@@ -4,7 +4,7 @@
 	import { getDbState } from '$lib/dbState';
 	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import DbProgressBar from '$lib/DbProgressBar.svelte';
-	import { t, getCorpusLang } from '$lib/i18n';
+	import { t, getCorpusLang, getUiLang } from '$lib/i18n';
 	import type { PageData } from './$types';
 
 	// Manifest comes from the root layout's load(); it prerenders the browse view
@@ -25,10 +25,12 @@
 	});
 
 	const corpusLang = $derived(getCorpusLang());
+	const uiLang = $derived(getUiLang());
 
 	// Before the DB lands, show the manifest's canonical (Latin) book list. Once
-	// ready, upgrade to the DB so corpus-language titles localize.
-	const books = $derived(db.ready ? getBooks(corpusLang) : data.manifest.books);
+	// ready, upgrade to the DB so titles follow the corpus language and the
+	// blurbs follow the UI language.
+	const books = $derived(db.ready ? getBooks(corpusLang, uiLang) : data.manifest.books);
 
 	const results = $derived.by(() => {
 		if (!db.ready || !query.trim()) return [];
@@ -126,16 +128,11 @@
 			<ul class="space-y-3">
 				{#each books as book}
 					<li>
-						<!-- Links stay in the prerendered HTML for discovery, but click /
-						     focus are suppressed until the DB is ready (the target route
-						     needs it). -->
+						<!-- /book/<id> is prerendered static HTML (metadata + chapter TOC,
+						     no DB), so these links work without JS or the DB loaded. -->
 						<a
 							href="/book/{book.id}"
-							aria-disabled={!db.ready}
-							tabindex={db.ready ? undefined : -1}
-							class="group block p-4 rounded-lg border border-border transition-colors {db.ready
-								? 'hover:border-ring'
-								: 'pointer-events-none opacity-60'}"
+							class="group block p-4 rounded-lg border border-border transition-colors hover:border-ring"
 						>
 							<strong class="font-serif text-lg text-foreground group-hover:text-primary">{book.title}</strong>
 							<span class="text-muted-foreground"> — {book.author}</span>

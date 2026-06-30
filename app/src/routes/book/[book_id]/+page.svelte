@@ -2,9 +2,10 @@
 	import { getBook, getChapters } from '$lib';
 	import { getDbState } from '$lib/dbState';
 	import Breadcrumbs from '$lib/Breadcrumbs.svelte';
+	import NoScriptNotice from '$lib/NoScriptNotice.svelte';
 	import { recordPage } from '$lib/trail.svelte.js';
 	import { getProgress } from '$lib/progress.svelte.js';
-	import { t, getCorpusLang } from '$lib/i18n';
+	import { t, bookNote, getCorpusLang, getUiLang } from '$lib/i18n';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -12,11 +13,14 @@
 
 	const bookId = $derived(data.book.id);
 	const corpusLang = $derived(getCorpusLang());
+	const uiLang = $derived(getUiLang());
 
 	// The manifest (source/Latin) renders immediately and prerenders; once the DB
-	// is ready, swap to the corpus-language metadata and chapter titles.
-	const localized = $derived(db.ready ? getBook(bookId, corpusLang) : null);
+	// is ready, swap to the corpus-language title/chapters and the UI-language
+	// description. The editorial note is generated from the rendition's provenance.
+	const localized = $derived(db.ready ? getBook(bookId, corpusLang, uiLang) : null);
 	const book = $derived(localized ?? data.book);
+	const note = $derived(bookNote(book));
 	const chapters = $derived(db.ready ? getChapters(bookId, corpusLang) : data.chapters);
 	const resume = $derived(db.ready ? getProgress(bookId) : null);
 
@@ -51,12 +55,12 @@
 				{@html book.description}
 			</div>
 		{/if}
-		{#if book.notes}
+		{#if note}
 			<section class="mt-4">
 				<h2 class="text-sm font-display text-muted-foreground uppercase tracking-wide">
 					{t('book.notesHeading')}
 				</h2>
-				<p class="mt-1 text-sm text-muted-foreground font-serif">{book.notes}</p>
+				<p class="mt-1 text-sm text-muted-foreground font-serif">{note}</p>
 			</section>
 		{/if}
 	</header>
@@ -72,6 +76,11 @@
 
 	<section>
 		<h2 class="text-lg font-display text-foreground mb-3">{t('book.chaptersHeading')}</h2>
+		<!-- The chapter reader (/book/<id>/<chapter>) needs JS + the DB, so its
+		     links stay disabled without scripts; the notice explains why. -->
+		<div class="mb-3">
+			<NoScriptNotice />
+		</div>
 		<ul class="space-y-2">
 			{#each chapters as ch}
 				<li>

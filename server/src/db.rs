@@ -24,9 +24,20 @@ pub fn create_tables(conn: &Connection) {
             author          TEXT NOT NULL,
             date            TEXT,
             ref_edition     TEXT,
+            source          TEXT
+        );
+
+        -- Editorial cover descriptions, keyed by UI language (not corpus
+        -- language): the blurb is about the work, the same content translated.
+        -- Authored in the per-book sidecar; the long description is stored as
+        -- rendered HTML.
+        CREATE TABLE IF NOT EXISTS book_descriptions (
+            book_id           TEXT NOT NULL,
+            lang              TEXT NOT NULL,
             description_short TEXT,
-            description     TEXT,
-            notes           TEXT
+            description       TEXT,
+            PRIMARY KEY (book_id, lang),
+            FOREIGN KEY (book_id) REFERENCES books(id)
         );
 
         CREATE TABLE IF NOT EXISTS chapters (
@@ -117,9 +128,12 @@ pub fn create_tables(conn: &Connection) {
             book_id  TEXT NOT NULL,
             lang     TEXT NOT NULL,
             title    TEXT NOT NULL,
-            description_short TEXT,
-            description TEXT,
-            notes    TEXT,
+            -- Rendition provenance (this translation's own frontmatter). The book
+            -- page generates its editorial note from these, in the UI language.
+            provenance         TEXT,
+            status             TEXT,
+            translator         TEXT,
+            translation_source TEXT,
             PRIMARY KEY (book_id, lang),
             FOREIGN KEY (book_id) REFERENCES books(id)
         );
@@ -255,10 +269,16 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
     }
 
     let books: Vec<ManifestBook> = {
+        // The manifest prerenders before the DB loads, so it carries the
+        // default-UI-language (English) cover description; the client swaps to
+        // the actual UI language once the DB is available.
         let mut stmt = conn
             .prepare(
-                "SELECT id, title, author, date, ref_edition, description_short, description, notes
-                 FROM books ORDER BY id",
+                "SELECT b.id, b.title, b.author, b.date, b.ref_edition,
+                        d.description_short, d.description
+                 FROM books b
+                 LEFT JOIN book_descriptions d ON d.book_id = b.id AND d.lang = 'en'
+                 ORDER BY b.id",
             )
             .expect("prepare books");
         let rows = stmt
@@ -271,7 +291,6 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
                     reference_edition: r.get(4)?,
                     description_short: r.get(5)?,
                     description: r.get(6)?,
-                    notes: r.get(7)?,
                     chapters: Vec::new(),
                     translations: Vec::new(),
                 })
@@ -379,12 +398,32 @@ pub fn build_manifest(conn: &Connection) -> Manifest {
     }
 }
 
+/// Insert a book's editorial cover descriptions from its sidecar, one row per UI
+/// language. `short` and `long` are keyed by the same language codes; either may
+/// be absent for a given language. `long` values are pre-rendered HTML.
+pub fn insert_book_descriptions(
+    conn: &Connection,
+    book_id: &str,
+    short: &std::collections::BTreeMap<String, String>,
+    long: &std::collections::BTreeMap<String, String>,
+) {
+    let langs: std::collections::BTreeSet<&String> = short.keys().chain(long.keys()).collect();
+    for lang in langs {
+        conn.execute(
+            "INSERT OR REPLACE INTO book_descriptions (book_id, lang, description_short, description)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![book_id, lang, short.get(lang), long.get(lang)],
+        )
+        .expect("Failed to insert book description");
+    }
+}
+
 pub fn insert_book(conn: &Connection, book: &ParsedBook) {
     let m = &book.meta;
     conn.execute(
-        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, description_short, description, notes)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![m.id, m.title, m.author, m.date, m.reference_edition, m.description_short, m.description, m.notes],
+        "INSERT OR REPLACE INTO books (id, title, author, date, ref_edition, source)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![m.id, m.title, m.author, m.date, m.reference_edition, m.source],
     )
     .expect("Failed to insert book");
 
@@ -460,9 +499,18 @@ pub fn insert_translations(conn: &Connection, book: &ParsedBook, lang: &str) {
     // ## headings. The source book row already exists (translation files are
     // ingested after sources), so the FK is satisfied.
     conn.execute(
-        "INSERT OR REPLACE INTO book_translations (book_id, lang, title, description_short, description, notes)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-        params![book_id, lang, book.meta.title, book.meta.description_short, book.meta.description, book.meta.notes],
+        "INSERT OR REPLACE INTO book_translations
+            (book_id, lang, title, provenance, status, translator, translation_source)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        params![
+            book_id,
+            lang,
+            book.meta.title,
+            book.meta.provenance,
+            book.meta.status,
+            book.meta.translator,
+            book.meta.translation_source
+        ],
     )
     .expect("Failed to insert book translation");
 

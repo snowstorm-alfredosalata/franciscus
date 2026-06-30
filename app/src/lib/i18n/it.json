@@ -31,7 +31,15 @@
 		"notFound": "Libro non trovato.",
 		"chaptersHeading": "Capitoli",
 		"notesHeading": "Note",
-		"continueReading": "Continua a leggere"
+		"continueReading": "Continua a leggere",
+		"note": {
+			"aiDraft": "Questa traduzione è stata prodotta dall'IA ed è in corso di revisione editoriale; non è adatta alla citazione accademica.",
+			"ai": "Questa traduzione è stata prodotta dall'IA.",
+			"officialFrom": "Traduzione ufficiale da {source}.",
+			"draft": "Questa traduzione è una bozza, in corso di revisione editoriale.",
+			"human": "Traduzione umana revisionata.",
+			"sourceFrom": "Testo originale da {source}."
+		}
 	},
 	"chapter": {
 		"notFound": "Capitolo non trovato."

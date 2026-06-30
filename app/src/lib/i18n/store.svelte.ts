@@ -38,6 +38,34 @@ export function setCorpusLang(lang: string) {
 	savePref('franciscus-corpus-lang', lang);
 }
 
+/** The book page's editorial note, generated from the read rendition's
+ *  provenance and rendered in the current UI language. Returns null when there
+ *  is no provenance (the Latin source rendition). Reads `uiLang` via `t`, so it
+ *  is reactive inside a `$derived`. */
+export function bookNote(meta: {
+	provenance: string | null;
+	status: string | null;
+	translation_source: string | null;
+	source: string | null;
+}): string | null {
+	const { provenance, status, translation_source, source } = meta;
+	if (provenance) {
+		// A translation rendition: the note is about the translation.
+		if (provenance === 'ai') {
+			return status === 'final' ? t('book.note.ai') : t('book.note.aiDraft');
+		}
+		if (translation_source) {
+			return t('book.note.officialFrom').replace('{source}', translation_source);
+		}
+		return status === 'final' ? t('book.note.human') : t('book.note.draft');
+	}
+	// The source rendition (Latin original): note where the text was obtained.
+	if (source) {
+		return t('book.note.sourceFrom').replace('{source}', source);
+	}
+	return null;
+}
+
 export function t(path: string): string {
 	const dict = messages[uiLang] ?? messages['en'];
 	const keys = path.split('.');

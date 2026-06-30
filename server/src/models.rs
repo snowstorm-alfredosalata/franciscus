@@ -16,23 +16,27 @@ pub struct BookMeta {
     pub date: Option<String>,
     #[serde(default)]
     pub reference_edition: Option<String>,
-    /// One-line description; localized in translation files. Surfaced on the home
-    /// book list.
+    /// Where the source-language (Latin) text was obtained, on base `<id>.md`
+    /// files. Feeds the book page's editorial note for the source rendition,
+    /// the counterpart of `translation_source` for translations.
     #[serde(default)]
-    pub description_short: Option<String>,
-    /// Long description; localized. Surfaced on the book page.
-    #[serde(default)]
-    pub description: Option<String>,
-    /// Free-text editorial note; localized. Surfaced on the book page.
-    #[serde(default)]
-    pub notes: Option<String>,
-    // Translation-only frontmatter; None on source `<id>.md` files.
+    pub source: Option<String>,
+    // Editorial descriptions are NOT frontmatter — they live in the per-book
+    // sidecar (`books/<id>.yaml`, keyed by UI language) since they are an
+    // annotation about the work, not part of any rendition. See `BookSidecar`.
+    // Translation-only frontmatter; None on source `<id>.md` files. These carry
+    // the rendition's provenance, from which the book page's editorial note is
+    // generated client-side (per UI language). The hand-authored `notes` field
+    // was retired in favour of this — see the provenance note generator in the
+    // app. Extra frontmatter keys (e.g. a stale `notes:`) are ignored by serde.
     #[serde(default)]
     pub translator: Option<String>,
     #[serde(default)]
     pub provenance: Option<String>,
     #[serde(default)]
     pub status: Option<String>,
+    #[serde(default)]
+    pub translation_source: Option<String>,
 }
 
 // --- Parsed structures (from markdown, before DB insertion) ---
@@ -70,11 +74,27 @@ pub struct ParsedBook {
     pub chapters: Vec<ParsedChapter>,
 }
 
-// --- YAML annotation sidecar (spec/annotations.md) ---
-// File is `books/<book_id>.yaml`, a flat list; book_id comes from the filename.
+// --- Per-book YAML sidecar (FORMAT.md §10) ---
+// File is `books/<book_id>.yaml`; book_id comes from the filename. It carries
+// book-level "cover" properties (editorial descriptions, keyed by UI language)
+// at the top, and the paragraph annotations nested under `annotations`.
 
 fn default_provenance() -> String {
     "ai".to_string()
+}
+
+/// The whole sidecar. Both sections are optional so a book may have only
+/// annotations, only cover descriptions, or both. `description_short` /
+/// `description` map a UI language code (`en`, `it`, …) to its text; the long
+/// `description` value is authored as Markdown and rendered to HTML at ingest.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct BookSidecar {
+    #[serde(default)]
+    pub description_short: BTreeMap<String, String>,
+    #[serde(default)]
+    pub description: BTreeMap<String, String>,
+    #[serde(default)]
+    pub annotations: Vec<Annotation>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -148,11 +168,12 @@ pub struct ManifestBook {
     pub author: String,
     pub date: Option<String>,
     pub reference_edition: Option<String>,
-    /// Source-language descriptions/notes (see `BookMeta`). Localized variants
-    /// come from the DB once it loads; the manifest carries source for prerender.
+    /// Base descriptions (English default; see `BookMeta`). Localized variants
+    /// come from the DB once it loads; the manifest carries the base for
+    /// prerender. The book page's editorial note is generated from rendition
+    /// provenance (DB-only), so it is not carried here.
     pub description_short: Option<String>,
     pub description: Option<String>,
-    pub notes: Option<String>,
     /// Source-language chapter list, in reading order, so `/book/<id>` can
     /// prerender its table of contents without the sql.js DB.
     pub chapters: Vec<ManifestChapter>,

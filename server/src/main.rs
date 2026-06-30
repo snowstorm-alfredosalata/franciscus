@@ -163,11 +163,31 @@ fn run_build(data_dir: &PathBuf, output: &PathBuf) {
 
     for path in &annotation_files {
         let book_id = path.file_stem().unwrap().to_string_lossy();
-        let text = std::fs::read_to_string(path).expect("Cannot read annotation file");
-        match serde_yaml::from_str::<Vec<models::Annotation>>(&text) {
-            Ok(annotations) => {
-                let (topic_rows, rel_rows) = db::insert_annotations(&conn, &book_id, &annotations);
-                println!("  annotations: {book_id} ({} entries, {topic_rows} topic + {rel_rows} relation rows)", annotations.len());
+        let text = std::fs::read_to_string(path).expect("Cannot read sidecar file");
+        match serde_yaml::from_str::<models::BookSidecar>(&text) {
+            Ok(sidecar) => {
+                // Cover descriptions, keyed by UI language. The long description
+                // is authored as Markdown and injected via {@html}, so render it
+                // to HTML now (paragraph breaks survive, unlike a single <p>).
+                let long_html: std::collections::BTreeMap<String, String> = sidecar
+                    .description
+                    .iter()
+                    .map(|(lang, md)| (lang.clone(), render_markdown(md)))
+                    .collect();
+                db::insert_book_descriptions(
+                    &conn,
+                    &book_id,
+                    &sidecar.description_short,
+                    &long_html,
+                );
+
+                let (topic_rows, rel_rows) =
+                    db::insert_annotations(&conn, &book_id, &sidecar.annotations);
+                println!(
+                    "  sidecar: {book_id} ({} annotations, {} desc langs, {topic_rows} topic + {rel_rows} relation rows)",
+                    sidecar.annotations.len(),
+                    long_html.len().max(sidecar.description_short.len())
+                );
                 annotation_count += (topic_rows + rel_rows) as u32;
             }
             Err(e) => {
