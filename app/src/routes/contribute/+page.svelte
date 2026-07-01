@@ -1,10 +1,28 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
+    import { browser } from '$app/environment';
     import { t } from '$lib/i18n';
+    import * as github from '$lib/github.svelte';
     import type { PageData } from './$types';
 
     // Corpus provenance comes from the manifest (root layout load), so this hub
     // renders and prerenders without the sql.js DB.
     let { data }: { data: PageData } = $props();
+
+    // Re-check a persisted GitHub session on load; a revoked/expired token drops
+    // back to disconnected. Client-only — no-op during prerender/SSR.
+    onMount(() => {
+        github.revalidate();
+    });
+
+    // Friendly, localized message for the last connect error (null when none).
+    const connectError = $derived.by(() => {
+        const code = github.getError();
+        if (!code) return null;
+        if (code === 'popup_blocked') return t('pages.contribute.errPopupBlocked');
+        if (code === 'popup_closed') return t('pages.contribute.errPopupClosed');
+        return t('pages.contribute.errConnect');
+    });
     const corpus = $derived(data.manifest.corpus);
     const appLabel = `${__APP_VERSION__}${__APP_COMMIT__ ? ` (${__APP_COMMIT__})` : ''}`;
     // $derived so the localized "texts" label tracks the active UI language.
@@ -23,6 +41,79 @@
     <div class="text-foreground leading-relaxed">
         {@html t('pages.contribute.body')}
     </div>
+
+    <section class="mt-8 border-t border-border pt-6">
+        <h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80 mb-3">
+            {t('pages.contribute.githubTitle')}
+        </h2>
+        <div class="text-foreground leading-relaxed">
+            {@html t('pages.contribute.githubBody')}
+        </div>
+
+        {#if browser}
+            {#if github.isConnected()}
+                {@const user = github.getUser()}
+                <div class="mt-4 flex items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
+                    {#if user}
+                        <img
+                            src={user.avatarUrl}
+                            alt=""
+                            width="40"
+                            height="40"
+                            class="h-10 w-10 shrink-0 rounded-full"
+                        />
+                        <div class="min-w-0 flex-1">
+                            <a
+                                href={user.htmlUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="font-medium text-foreground underline decoration-transparent hover:decoration-inherit"
+                            >
+                                {user.name ?? user.login}
+                            </a>
+                            <div class="truncate text-sm text-muted-foreground">@{user.login}</div>
+                        </div>
+                    {/if}
+                    <button
+                        type="button"
+                        onclick={() => github.disconnect()}
+                        class="shrink-0 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                    >
+                        {t('pages.contribute.disconnect')}
+                    </button>
+                </div>
+            {:else}
+                <label class="mt-4 flex items-start gap-2 text-sm text-foreground">
+                    <input
+                        type="checkbox"
+                        checked={github.getConsent()}
+                        onchange={(e) => github.setConsent(e.currentTarget.checked)}
+                        class="mt-0.5 h-4 w-4 shrink-0 rounded border-border"
+                    />
+                    <span>{t('pages.contribute.consentLabel')}</span>
+                </label>
+                <button
+                    type="button"
+                    disabled={!github.getConsent() || github.isConnecting()}
+                    onclick={() => github.connect()}
+                    class="mt-4 inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-5 w-5" aria-hidden="true">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+                    </svg>
+                    {github.isConnecting()
+                        ? t('pages.contribute.connecting')
+                        : t('pages.contribute.connectButton')}
+                </button>
+            {/if}
+
+            {#if connectError}
+                <p class="mt-3 text-sm text-destructive" role="alert">{connectError}</p>
+            {/if}
+        {:else}
+            <p class="mt-4 text-sm text-muted-foreground">{t('pages.contribute.githubNoScript')}</p>
+        {/if}
+    </section>
 
     <section class="mt-8 border-t border-border pt-6">
         <h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80 mb-3">
