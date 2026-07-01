@@ -4,11 +4,11 @@ Thanks for wanting to help. There are two kinds of contribution, and they live
 in two different repos:
 
 - **Content** — texts, translations, annotations, topic pages → the
-  [`franciscus-data`](https://github.com/snowstorm-alfredosalata/franciscus-data)
+  [`franciscus-data`](https://github.com/FranciscusApp/franciscus-data)
   repo (CC0).
 - **Code** — the app and the data pipeline → **this** repo (AGPL-3.0).
 
-When in doubt, [open an issue](https://github.com/snowstorm-alfredosalata/franciscus/issues)
+When in doubt, [open an issue](https://github.com/FranciscusApp/franciscus/issues)
 first and we'll point you the right way.
 
 ---
@@ -20,16 +20,16 @@ The corpus is machine-transcribed, machine-translated, and machine-annotated, so
 mistranslations, or annotations that point at the wrong passage.
 
 All of this lives in the
-**[`franciscus-data`](https://github.com/snowstorm-alfredosalata/franciscus-data)**
+**[`franciscus-data`](https://github.com/FranciscusApp/franciscus-data)**
 repo, which has its own README and CONTRIBUTING covering the source format,
 the annotation vocabulary, and the editing workflow.
 
 - **Found a small error while reading?** The fastest path is an
-  [issue](https://github.com/snowstorm-alfredosalata/franciscus-data/issues) on
+  [issue](https://github.com/FranciscusApp/franciscus-data/issues) on
   the data repo. Include the URL of the passage (it deep-links down to the verse)
   and what's wrong.
 - **Want to fix it yourself?** Head to
-  [`franciscus-data`](https://github.com/snowstorm-alfredosalata/franciscus-data)
+  [`franciscus-data`](https://github.com/FranciscusApp/franciscus-data)
   and follow its CONTRIBUTING.
 
 ## Contributing code
@@ -40,7 +40,7 @@ the annotation vocabulary, and the editing workflow.
 
 Development is currently driven by the in-repo [ROADMAP.md](ROADMAP.md) rather
 than the issue tracker. If you'd like to pick something up or propose work,
-[get in touch](https://github.com/snowstorm-alfredosalata/franciscus/issues) —
+[get in touch](https://github.com/FranciscusApp/franciscus/issues) —
 we'll open and use issues to coordinate from there.
 
 ---

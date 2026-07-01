@@ -12,7 +12,7 @@ offline-capable web app.
 
 [![Live](https://img.shields.io/badge/live-franciscus.app-green)](https://franciscus.app)
 [![App license: AGPL-3.0](https://img.shields.io/badge/app-AGPL--3.0-blue)](LICENSE)
-[![Corpus license: CC0](https://img.shields.io/badge/corpus-CC0--1.0-lightgrey)](https://github.com/snowstorm-alfredosalata/franciscus-data)
+[![Corpus license: CC0](https://img.shields.io/badge/corpus-CC0--1.0-lightgrey)](https://github.com/FranciscusApp/franciscus-data)
 [![Built with SvelteKit](https://img.shields.io/badge/SvelteKit-5-ff3e00?logo=svelte&logoColor=white)](https://kit.svelte.dev)
 [![Pipeline: Rust](https://img.shields.io/badge/pipeline-Rust-dea584?logo=rust&logoColor=black)](server/)
 
@@ -88,7 +88,7 @@ render without downloading the database.
 | Hosting | GitHub Pages (static) |
 
 The source texts and annotations live in a **separate repository**,
-[`franciscus-data`](https://github.com/snowstorm-alfredosalata/franciscus-data)
+[`franciscus-data`](https://github.com/FranciscusApp/franciscus-data)
 (CC0). This repo holds only the application code.
 
 ## Run it locally
@@ -128,20 +128,20 @@ Much of the corpus is **machine-generated and not yet fully reviewed by a
 human** — transcriptions, translations, and annotations alike — so expect
 occasional errors. Treat Franciscus as a reading and discovery tool, **not** a
 critical edition. Details are in the
-[corpus repo's README](https://github.com/snowstorm-alfredosalata/franciscus-data);
+[corpus repo's README](https://github.com/FranciscusApp/franciscus-data);
 reporting mistakes helps — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
 - **Application code** (this repo): [AGPL-3.0-or-later](LICENSE).
-- **Corpus** ([`franciscus-data`](https://github.com/snowstorm-alfredosalata/franciscus-data)):
+- **Corpus** ([`franciscus-data`](https://github.com/FranciscusApp/franciscus-data)):
   CC0-1.0 (public domain).
 
 ## Get in touch
 
 <div align="center">
 
-<a href="https://verbumcaro.it"><img src="https://raw.githubusercontent.com/snowstorm-alfredosalata/franciscus/refs/heads/master/app/static/vc-inline-dark.png" alt="Verbum Caro" width="240"></a>
+<a href="https://verbumcaro.it"><img src="https://raw.githubusercontent.com/FranciscusApp/franciscus/refs/heads/master/app/static/vc-inline-dark.png" alt="Verbum Caro" width="240"></a>
 
 </div>
 

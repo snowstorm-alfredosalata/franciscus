@@ -52,13 +52,11 @@ jobs:
       - name: Checkout data repo (franciscus-data)
         uses: actions/checkout@v4
         with:
-          repository: snowstorm-alfredosalata/franciscus-data
+          repository: FranciscusApp/franciscus-data
           path: franciscus-data
-          # Once franciscus-data is public, the default GITHUB_TOKEN can read it.
-          # While it is still private, set a DATA_REPO_TOKEN secret (a PAT or a
-          # fine-grained token with read access to franciscus-data) and this
-          # falls back to it automatically.
-          token: ${{ secrets.DATA_REPO_TOKEN || github.token }}
+          # franciscus-data is public, so the default GITHUB_TOKEN reads it with
+          # no extra credentials. If it is ever made private again, add a token
+          # here (a PAT / fine-grained token with read access to the corpus).
           # Pin a ref if you ever want to deploy from a tag instead of the tip
           # of the corpus's default branch:
           # ref: master
@@ -86,15 +84,9 @@ jobs:
         working-directory: franciscus
         run: make app
 
-      # Custom-domain hosting: GitHub Pages needs a CNAME file in the published
-      # artifact. We write it from a repo variable so the domain isn't hardcoded
-      # here. Set it under Settings → Secrets and variables → Actions → Variables
-      # (name: PAGES_CUSTOM_DOMAIN, value e.g. franciscus.example.org).
-      # Alternatively, commit the file to app/static/CNAME and delete this step —
-      # adapter-static copies static/ verbatim into build/.
-      - name: Write CNAME for custom domain
-        if: vars.PAGES_CUSTOM_DOMAIN != ''
-        run: echo "${{ vars.PAGES_CUSTOM_DOMAIN }}" > franciscus/app/build/CNAME
+      # Custom-domain hosting: the CNAME is committed at app/static/CNAME and
+      # adapter-static copies static/ verbatim into build/, so the published
+      # artifact already contains it — no build-time step needed.
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
